@@ -1,0 +1,672 @@
+---
+title: "Untitled"
+author: "Anh Nguyen"
+date: "7/15/2020"
+output: html_document
+---
+
+# Collinearity
+
+Data Load
+```{r}
+library(faraway)
+```
+
+## pars correlation visual
+
+```{r}
+pairs(seatpos, col = "dodgerblue")
+```
+
+## Correlation
+
+```{r}
+round(cor(seatpos),2)
+```
+
+We can see small value for full model but each individuals is not as small
+
+```{r}
+hip_model = lm(hipcenter ~ ., data = seatpos)
+summary(hip_model)
+```
+## Variance Inflation Factor
+
+### r^2_j
+
+Find Fitted model without response
+
+```{r}
+ht_shoes_model = lm(HtShoes ~ . - hipcenter, data = seatpos)
+summary(ht_shoes_model)$r.squared
+```
+
+Meaning that this ht-shoes is well explained by other variables
+
+```{r}
+vif(hip_model)
+```
+
+When vif > 5 : There is collinerity issue
+
+## Checking if noise is factor
+
+```{r}
+set.seed(1337)
+noise = rnorm(n = nrow(seatpos), mean = 0, sd = 5)
+hip_model_noise = lm(hipcenter + noise ~ ., data = seatpos)
+```
+
+check coef 
+
+```{r}
+coef(hip_model)
+```
+
+```{r}
+coef(hip_model_noise)
+```
+
+## Fitted smaller model
+
+```{r}
+hip_model_small = lm(hipcenter ~ Age + Arm + Ht, data = seatpos)
+summary(hip_model_small)
+```
+
+Check vif
+
+```{r}
+vif(hip_model_small)
+```
+ 
+# Partial correlation
+
+```{r}
+ht_shoes_model_small = lm(HtShoes ~ Age + Arm + Ht, data = seatpos)
+```
+
+```{r}
+cor(resid(ht_shoes_model_small), resid(hip_model_small))
+```
+
+Ht shoe has little to no corellation with age, arm and ht -> adding Ht shoe might be benefit
+
+Plotting
+```{r}
+plot(resid(hip_model_small) ~ resid(ht_shoes_model_small), 
+     col = "dodgerblue", pch = 20,
+     xlab = "Residuals, Added Predictor", 
+     ylab = "Residuals, Original Model")
+abline(h = 0, lty = 2)
+abline(v = 0, lty = 2)
+abline(lm(resid(hip_model_small) ~ resid(ht_shoes_model_small)),
+       col = "darkorange", lwd = 2)
+```
+
+
+# Corr Simulation
+
+```{r}
+set.seed(42)
+beta_0 = 7
+beta_1 = 3
+beta_2 = 4
+sigma  = 5
+```
+
+Check if x_1 & c_2 are corellation and if they are not correlated
+
+```{r}
+sample_size = 10
+num_sim     = 2500
+```
+
+## Correlated predictors
+Setting up data for x1 & x2
+
+```{r}
+x1 = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+x2 = c(1, 2, 3, 4, 5, 7, 6, 10, 9, 8)
+```
+
+Check corelation
+
+```{r}
+c(sd(x1), sd(x2))
+cor(x1, x2)
+```
+
+```{r}
+true_line_bad = beta_0 + beta_1 * x1 + beta_2 * x2
+beta_hat_bad  = matrix(0, num_sim, 2)
+mse_bad       = rep(0, num_sim) #mean square error
+```
+
+Function for simulation
+
+```{r}
+for (s in 1:num_sim) {
+  y = true_line_bad + rnorm(n = sample_size, mean = 0, sd = sigma)
+  reg_out = lm(y ~ x1 + x2)
+  beta_hat_bad[s, ] = coef(reg_out)[-1]
+  mse_bad[s] = mean(resid(reg_out) ^ 2)
+}
+```
+
+## Uncorrelated Predictor
+
+```{r}
+z1 = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+z2 = c(9, 2, 7, 4, 5, 6, 3, 8, 1, 10)
+```
+
+```{r}
+c(sd(z1), sd(z2))
+cor(z1, z2)
+```
+
+Storing value
+
+```{r}
+true_line_good = beta_0 + beta_1 * z1 + beta_2 * z2
+beta_hat_good  = matrix(0, num_sim, 2)
+mse_good       = rep(0, num_sim)
+```
+
+Function
+```{r}
+for (s in 1:num_sim) {
+  y = true_line_good + rnorm(n = sample_size, mean = 0, sd = sigma)
+  reg_out = lm(y ~ z1 + z2)
+  beta_hat_good[s, ] = coef(reg_out)[-1]
+  mse_good[s] = mean(resid(reg_out) ^ 2)
+}
+```
+
+## Histogram of beta_1 hat with collinearity
+
+Beta_1 hat
+
+```{r}
+par(mfrow = c(1, 2))
+hist(beta_hat_bad[, 1],
+     col = "darkorange",
+     border = "dodgerblue",
+     main = expression("Histogram of " *hat(beta)[1]* " with Collinearity"),
+     xlab = expression(hat(beta)[1]),
+     breaks = 20)
+hist(beta_hat_good[, 1],
+     col = "darkorange",
+     border = "dodgerblue",
+     main = expression("Histogram of " *hat(beta)[1]* " without Collinearity"),
+     xlab = expression(hat(beta)[1]),
+     breaks = 20)
+```
+
+Range of Standard deviation much higher in correlated case
+
+beta_2 hat
+
+```{r}
+par(mfrow = c(1, 2))
+hist(beta_hat_bad[, 2],
+     col = "darkorange",
+     border = "dodgerblue",
+     main = expression("Histogram of " *hat(beta)[2]* " with Collinearity"),
+     xlab = expression(hat(beta)[2]),
+     breaks = 20)
+hist(beta_hat_good[, 2],
+     col = "darkorange",
+     border = "dodgerblue",
+     main = expression("Histogram of " *hat(beta)[2]* " without Collinearity"),
+     xlab = expression(hat(beta)[2]),
+     breaks = 20)
+```
+
+# Variable Selection
+
+```{r}
+library(faraway)
+hipcenter_mod = lm(hipcenter ~ ., data = seatpos)
+coef(hipcenter_mod)
+```
+
+Checking vif
+
+```{r}
+vif(hipcenter_mod)
+```
+
+## Exhausting Search
+
+```{r}
+library(leaps)
+all_hipcenter_mod = summary(regsubsets(hipcenter ~ ., data = seatpos))
+```
+
+### List of best model
+
+```{r}
+all_hipcenter_mod$which
+```
+
+### Rss 
+
+```{r}
+all_hipcenter_mod$rss
+```
+
+### adjR2
+
+```{r}
+all_hipcenter_mod$adjr2
+```
+
+### Find best R^2
+
+```{r}
+best_r2_ind = which.max(all_hipcenter_mod$adjr2)
+```
+
+```{r}
+all_hipcenter_mod$which[best_r2_ind, ]
+```
+
+### AIC
+
+```{r}
+p = length(coef(hipcenter_mod))
+n = length(resid(hipcenter_mod))
+```
+
+formula for AIC
+
+```{r}
+hipcenter_mod_aic = n * log(all_hipcenter_mod$rss / n) + 2 * (2:p)
+```
+
+
+Finsing best AIC
+
+```{r}
+best_aic_ind = which.min(hipcenter_mod_aic)
+all_hipcenter_mod$which[best_aic_ind,]
+```
+
+### Compare best model with others
+
+```{r}
+hipcenter_mod_best_aic = lm(hipcenter ~ Age + Ht + Leg, data = seatpos)
+```
+
+
+```{r}
+plot(hipcenter_mod_aic ~ I(2:p), ylab = "AIC", xlab = "p, number of parameters", 
+     pch = 20, col = "dodgerblue", type = "b", cex = 2,
+     main = "AIC vs Model Complexity")
+```
+
+### BIC
+```{r}
+hipcenter_mod_bic = n * log(all_hipcenter_mod$rss / n) + log(n) * (2:p)
+```
+
+Best BIC
+
+```{r}
+which.min(hipcenter_mod_bic)
+all_hipcenter_mod$which[1,]
+```
+
+## Backward
+
+```{r}
+hipcenter_mod_back_aic = step(hipcenter_mod, direction = "backward")
+```
+
+### AIC
+
+```{r}
+extractAIC(hipcenter_mod) # returns both p and AIC
+```
+
+### BIC
+```{r}
+hipcenter_mod_back_bic = step(hipcenter_mod, direction = "backward", k = log(n))
+```
+
+## Forward
+###
+
+```{r}
+hipcenter_mod_start = lm(hipcenter ~ 1, data = seatpos)
+hipcenter_mod_forw_aic = step(
+  hipcenter_mod_start, 
+  scope = hipcenter ~ Age + Weight + HtShoes + Ht + Seated + Arm + Thigh + Leg, 
+  direction = "forward")
+```
+
+## Stepwise
+```{r}
+hipcenter_mod_both_aic = step(
+  hipcenter_mod_start, 
+  scope = hipcenter ~ Age + Weight + HtShoes + Ht + Seated + Arm + Thigh + Leg, 
+  direction = "both")
+```
+
+# Higher order term
+
+```{r}
+autompg = read.table(
+  "http://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
+  quote = "\"",
+  comment.char = "",
+  stringsAsFactors = FALSE)
+colnames(autompg) = c("mpg", "cyl", "disp", "hp", "wt", "acc", 
+                      "year", "origin", "name")
+autompg = subset(autompg, autompg$hp != "?")
+autompg = subset(autompg, autompg$name != "plymouth reliant")
+rownames(autompg) = paste(autompg$cyl, "cylinder", autompg$year, autompg$name)
+autompg$hp = as.numeric(autompg$hp)
+autompg$domestic = as.numeric(autompg$origin == 1)
+autompg = autompg[autompg$cyl != 5,]
+autompg = autompg[autompg$cyl != 3,]
+autompg$cyl = as.factor(autompg$cyl)
+autompg$domestic = as.factor(autompg$domestic)
+autompg = subset(autompg, select = c("mpg", "cyl", "disp", "hp", 
+                                     "wt", "acc", "year", "domestic"))
+```
+
+```{r}
+str(autompg)
+```
+
+```{r}
+pairs(autompg, col = "dodgerblue")
+```
+
+```{r}
+autompg_big_mod = lm(
+  log(mpg) ~ . ^ 2 + I(disp ^ 2) + I(hp ^ 2) + I(wt ^ 2) + I(acc ^ 2), 
+  data = autompg)
+```
+
+Backward: Not going to remove 1st order term if there is 2nd and bigger order term
+
+Forward: forward would work better
+
+# Cross-Validation
+
+```{r}
+make_poly_data = function(sample_size = 11) {
+  x = seq(0, 10)
+  y = 3 + x + 4 * x ^ 2 + rnorm(n = sample_size, mean = 0, sd = 20)
+  data.frame(x, y)
+}
+```
+
+```{r}
+set.seed(1234)
+poly_data = make_poly_data()
+```
+
+
+Fit Models
+
+```{r}
+fit_lin = lm(y~x, data = poly_data)
+fit_quad = lm(y ~ poly(x, degree = 2), data = poly_data)
+fit_big  = lm(y ~ poly(x, degree = 8), data = poly_data)
+```
+
+Plot
+```{r}
+plot(y ~ x, data = poly_data, ylim = c(-100, 400), cex = 2, pch = 20)
+xplot = seq(0, 10, by = 0.1)
+lines(xplot, predict(fit_quad, newdata = data.frame(x = xplot)),
+      col = "dodgerblue", lwd = 2, lty = 1)
+lines(xplot, predict(fit_big, newdata = data.frame(x = xplot)),
+      col = "darkorange", lwd = 2, lty = 2)
+```
+
+##Check RMSE
+
+```{r}
+sqrt(mean(resid(fit_lin)^2))
+sqrt(mean(resid(fit_quad)^2))
+sqrt(mean(resid(fit_big)^2))
+```
+
+Plot to have point removed
+
+```{r}
+fit_quad_removed = lm(y ~ poly(x, degree = 2), data = poly_data[-3, ])
+fit_big_removed  = lm(y ~ poly(x, degree = 8), data = poly_data[-3, ])
+
+plot(y ~ x, data = poly_data, ylim = c(-100, 400), cex = 2, pch = 20)
+xplot = seq(0, 10, by = 0.1)
+lines(xplot, predict(fit_quad_removed, newdata = data.frame(x = xplot)),
+      col = "dodgerblue", lwd = 2, lty = 1)
+lines(xplot, predict(fit_big_removed, newdata = data.frame(x = xplot)),
+      col = "darkorange", lwd = 2, lty = 2)
+```
+
+## LOOP RMSE
+```{r}
+calc_loocv_rmse = function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+```
+
+
+# Tips for R
+
+## mean square error
+```{r}
+mean(resid(reg_out))
+```
+
+# Search
+
+##Exhausting search
+```{r}
+library(leaps)
+price_mod_exhaus = summary(regsubsets(price ~ ., data = sac_trn_data))
+```
+
+```{r}
+price_mod_exhaus$which
+```
+
+Fomular getting model from exhausted search
+
+```{r}
+#adj R2 model
+get_es_mod_using_adjr2 = function(es_model){
+  best_r2 = which.max(es_model$adjr2)
+  es_model$which[best_r2,]
+}
+
+#AIC model
+get_es_mod_using_aic = function(model,es_model){
+  p = length(coef(model))
+  n = length(resid(model))
+  aic_s = n * log(es_model$rss / n) + 2 * (2:p)
+  best_aic_ind = which.min(aic_s)
+  es_model$which[best_aic_ind,]
+}
+
+#BIC model
+get_es_mod_using_bic = function(model,es_model){
+  p = length(coef(model))
+  n = length(resid(model))
+  bic_s = n * log(es_model$rss / n) + log(n) * (2:p)
+  best_bic_ind = which.min(bic_s)
+  es_model$which[best_bic_ind,]
+}
+```
+
+```{r}
+get_es_mod_using_adjr2(price_mod_exhaus)
+```
+
+```{r}
+get_es_mod_using_aic(price_mod,price_mod_exhaus)
+```
+
+```{r}
+get_es_mod_using_bic(price_mod,price_mod_exhaus)
+```
+
+Fitted Model
+```{r}
+price_es_mod_r2 = lm(price ~ beds + baths + sqft + type + latitude + longitude + limits, data = sac_trn_data)
+price_es_mod_aic = lm(price ~ beds + sqft + type + latitude + longitude, data = sac_trn_data)
+price_es_mod_bic = lm(price ~ beds + sqft + longitude, data = sac_trn_data)
+```
+
+
+
+## AIC
+
+```{r}
+price_back_aic = step(price_mod, direction = "backward")
+```
+
+Using AIC forward
+
+```{r}
+price_mod_start = lm(price ~ 1, data = sac_trn_data)
+price_forw_aic = step(
+  price_mod_start, 
+  scope = price ~ beds + baths + sqft + type + latitude + longitude + limits, 
+  direction = "forward")
+```
+
+## BIC
+Using BIC backward
+
+```{r}
+
+n = length(resid(price_mod))
+
+price_back_bic = step(price_mod, direction = "backward", k = log(n))
+```
+
+Using BIC forward
+
+```{r}
+price_forw_bic = step(
+  price_mod_start, 
+  scope = price ~ beds + baths + sqft + type + latitude + longitude + limits, 
+  direction = "forward", k = log(n))
+```
+
+## Stepwise
+Stepwise AIC
+
+```{r}
+price_both_aic = step(price_mod, 
+                      scope = price ~ .,
+                      direction = "both")
+```
+
+Stepwise BIC
+
+```{r}
+price_both_bic = step(price_mod, 
+                      scope = price ~ .,
+                      direction = "both",
+                      k = log(n))
+```
+
+```{r}
+df_result = data.frame(
+  ModFrom = c(
+    "Backward AIC",
+    "Forward AIC",
+    "Stepwise AIC",
+    "Backward BIC",
+    "Forward BIC",
+    "Stepwise BIC",
+    "Exhausted R2",
+    "Exhausted AIC",
+    "Exhausted BIC"
+  ),
+  AIC = c(
+      extractAIC(price_back_aic)[2],
+      extractAIC(price_forw_aic)[2],
+      extractAIC(price_both_aic)[2],
+      extractAIC(price_back_bic)[2],
+      extractAIC(price_forw_bic)[2],
+      extractAIC(price_both_bic)[2],
+      extractAIC(price_es_mod_aic)[2],
+      extractAIC(price_es_mod_bic)[2],
+      extractAIC(price_es_mod_r2)[2]
+  ),
+  LOOCV_RMSE = c(
+      get_loocv_rmse(price_back_aic),
+      get_loocv_rmse(price_forw_aic),
+      get_loocv_rmse(price_both_aic),
+      get_loocv_rmse(price_back_bic),
+      get_loocv_rmse(price_forw_bic),
+      get_loocv_rmse(price_both_bic),
+      get_loocv_rmse(price_es_mod_aic),
+      get_loocv_rmse(price_es_mod_bic),
+      get_loocv_rmse(price_es_mod_r2)
+  ),
+  SW_decision = c(
+      get_sw_decision(price_back_aic, alpha = 0.01),
+      get_sw_decision(price_forw_aic, alpha = 0.01),
+      get_sw_decision(price_both_aic, alpha = 0.01),
+      get_sw_decision(price_back_bic, alpha = 0.01),
+      get_sw_decision(price_forw_bic, alpha = 0.01),
+      get_sw_decision(price_both_bic, alpha = 0.01),
+      get_sw_decision(price_es_mod_aic, alpha = 0.01),
+      get_sw_decision(price_es_mod_bic, alpha = 0.01),
+      get_sw_decision(price_es_mod_r2, alpha = 0.01)
+  ),
+  
+  bp_decision = c(
+      get_bp_decision(price_back_aic, alpha = 0.01),
+      get_bp_decision(price_forw_aic, alpha = 0.01),
+      get_bp_decision(price_both_aic, alpha = 0.01),
+      get_bp_decision(price_back_bic, alpha = 0.01),
+      get_bp_decision(price_forw_bic, alpha = 0.01),
+      get_bp_decision(price_both_bic, alpha = 0.01),
+      get_bp_decision(price_es_mod_aic, alpha = 0.01),
+      get_bp_decision(price_es_mod_bic, alpha = 0.01),
+      get_bp_decision(price_es_mod_r2, alpha = 0.01)
+  ),
+  num_params = c(
+      get_num_params(price_back_aic),
+      get_num_params(price_forw_aic),
+      get_num_params(price_both_aic),
+      get_num_params(price_back_bic),
+      get_num_params(price_forw_bic),
+      get_num_params(price_both_bic),
+      get_num_params(price_es_mod_aic),
+      get_num_params(price_es_mod_bic),
+      get_num_params(price_es_mod_r2)
+  )
+)
+```
+
+```{r}
+kable(df_result)
+```
+
+
+Checking LOOCV RMSE
+```{r}
+get_loocv_rmse(price_back_aic)
+get_loocv_rmse(price_forw_aic)
+get_loocv_rmse(price_back_bic)
+get_loocv_rmse(price_forw_bic)
+```
+
+Get adjusted R2
+```{r}
+
+```

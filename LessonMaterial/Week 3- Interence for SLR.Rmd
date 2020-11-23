@@ -1,0 +1,444 @@
+---
+title: "School's document"
+author: "Anh Nguyen"
+date: "6/03/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+#Variance of Beta Hat
+
+\[
+\hat{\beta}_1 \sim N\left(  \beta_1, \frac{\sigma^2}{S_{xx}} \right)
+\]
+
+and
+
+\[
+\hat{\beta}_0 \sim N\left(  \beta_0, \sigma^2 \left(\frac{1}{n} + \frac{\bar{x}^2}{S_{xx}}\right) \right).
+\]
+
+First we need to decide ahead of time what our $x$ values will be for this simulation, since the $x$ values in SLR are also considered known quantities. The choice of $x$ values is arbitrary. Here we also set a seed for randomization, and calculate $S_{xx}$ which we will need going forward.
+
+```{r}
+set.seed(42)
+sample_size = 100 # this is n
+x = seq(-1, 1, length = sample_size)
+Sxx = sum((x - mean(x)) ^ 2)
+```
+
+We also fix our parameter values.
+
+```{r}
+beta_0 = 3
+beta_1 = 6
+sigma  = 2
+```
+
+With this information, we know the sampling distributions should be:
+
+```{r}
+#True variance of beta_1_hat 
+(var_beta_1_hat = sigma ^ 2 / Sxx)
+(var_beta_0_hat = sigma ^ 2 * (1 / sample_size + mean(x) ^ 2 / Sxx))
+```
+
+\[
+\hat{\beta}_1 \sim N(  `r beta_1`, `r var_beta_1_hat`)
+\]
+
+and
+
+\[
+\hat{\beta}_0 \sim N(  `r beta_0`, `r var_beta_0_hat`).
+\]
+
+That is,
+
+\[
+\begin{aligned}
+\text{E}[\hat{\beta}_1] &= `r beta_1` \\
+\text{Var}[\hat{\beta}_1] &= `r var_beta_1_hat`
+\end{aligned}
+\]
+
+and
+
+\[
+\begin{aligned}
+\text{E}[\hat{\beta}_0] &= `r beta_0` \\
+\text{Var}[\hat{\beta}_0] &= `r var_beta_0_hat`.
+\end{aligned}
+\]
+
+# Variance of B1 hat
+
+Now, simulate data from this model 10000 times
+
+```{r}
+#preallocate the vector
+num_samples = 10000
+beta_0_hats = rep(0, num_samples)
+beta_1_hats = rep(0, num_samples)
+
+for (i in 1:num_samples) {
+  eps = rnorm(sample_size, mean = 0, sd = sigma) #noise using sigma
+  y   = beta_0 + beta_1 * x + eps #generate y value for this dataset
+  
+  sim_model = lm(y ~ x) #fit regression
+  
+  beta_0_hats[i] = coef(sim_model)[1] #extract beta0 & beta 1
+  beta_1_hats[i] = coef(sim_model)[2]
+}
+```
+
+
+Each time we simulated the data, we obtained values of the estimated coefficiets. The variables `beta_0_hats` and `beta_1_hats` now store 10,000 simulated values of $\hat{\beta}_0$ and $\hat{\beta}_1$ respectively.
+
+We first verify the distribution of $\hat{\beta}_1$.
+
+```{r}
+mean(beta_1_hats) # empirical mean
+beta_1            # true mean
+var(beta_1_hats)  # empirical variance
+var_beta_1_hat    # true variance
+```
+
+We see that the empirical and true means and variances are *very* similar. We also verify that the empirical distribution is normal. To do so, we plot a histogram of the `beta_1_hats`, and add the curve for the true distribution of $\hat{\beta}_1$. We use `prob = TRUE` to put the histogram on the same scale as the normal curve.
+
+# Verifying distribution NORMAL
+
+## Histogram
+
+```{r}
+hist(beta_1_hats, prob = TRUE, breaks = 25, 
+     xlab = expression(hat(beta)[1]), 
+     main = "",
+     border = "dodgerblue")
+
+# Adding curve for normal distribution
+curve(dnorm(x, mean = beta_1, sd = sqrt
+            (var_beta_1_hat)),
+      col = "darkorange", add = TRUE, lwd = 3)
+```
+
+
+## Check Probability
+
+```{r}
+mean(beta_1_hats <6.2)
+pnorm (6.2, mean = beta_1, sd = sqrt(var_beta_1_hat))
+```
+
+## Plot
+
+```{r}
+par(mar = c(5, 5, 1, 1)) # adjusted plot margins, otherwise the "hat" does not display
+plot(cumsum(beta_1_hats) / (1:length(beta_1_hats)), type = "l", ylim = c(5.95, 6.05),
+     xlab = "Number of Simulations",
+     ylab = expression("Empirical Mean of " ~ hat(beta)[1]),
+     col  = "dodgerblue")
+abline(h = 6, col = "darkorange", lwd = 2)
+
+par(mar = c(5, 5, 1, 1)) # adjusted plot margins, otherwise the "hat" does not display
+plot(cumsum(beta_0_hats) / (1:length(beta_0_hats)), type = "l", ylim = c(2.95, 3.05),
+     xlab = "Number of Simulations",
+     ylab = expression("Empirical Mean of " ~ hat(beta)[0]),
+     col  = "dodgerblue")
+abline(h = 3, col = "darkorange", lwd = 2)
+
+```
+
+#Testing in R
+
+
+```{r}
+# fit model
+stop_dist_model = lm(dist ~ speed, data = cars)
+
+#Summary fitted model
+summary(stop_dist_model)
+```
+
+```{r}
+names(summary(stop_dist_model))
+
+```
+
+The `names()` function tells us what information is available, and then we use the `$` operator and `coefficients` to extract the information we are interested in. Two values here should be immediately familiar.
+
+```{r}
+summary(stop_dist_model)$coefficients
+```
+
+- Estimate : beta^1, beta^0 (Estimated value of beta 1 and beta 0)
+- Std Error: SD of beta1 and beta0
+- T value
+- P- valude
+
+\[
+\hat{\beta}_0 = `r summary(stop_dist_model)$coefficients[1,1]`
+\]
+
+and
+
+\[
+\hat{\beta}_1 = `r summary(stop_dist_model)$coefficients[2,1]`
+\]
+## Plot data
+```{r}
+plot(dist ~ speed, data = cars,
+     xlab = "Speed (in Miles per hours",
+     ylab = "Stopping Distance (in feet)",
+     main = "Stopping Distance vs Speed",
+     pch = 20,
+     cex = 2,
+     col = "grey")
+
+abline(stop_dist_model, lwd = 5, col = "orange")
+```
+
+
+
+## Value of B^1
+
+
+```{r}
+#Getting full sumary of B^1
+summary(stop_dist_model)$coefficients[2,]
+```
+
+Again, the first value, `Estimate` is
+
+\[
+\hat{\beta}_1 = `r summary(stop_dist_model)$coefficients[2,1]`.
+\]
+
+The second value, `Std. Error`, is the standard error of $\hat{\beta}_1$,
+
+\[
+\text{SE}[\hat{\beta}_1] = \frac{s_e}{\sqrt{S_{xx}}} = `r summary(stop_dist_model)$coefficients[2,2]`.
+\]
+
+The third value, `t value`, is the value of the test statistic for testing $H_0: \beta_1 = 0$ vs $H_1: \beta_1 \neq 0$,
+
+\[
+t = \frac{\hat{\beta}_1-0}{\text{SE}[\hat{\beta}_1]} = \frac{\hat{\beta}_1-0}{s_e / \sqrt{S_{xx}}} = `r summary(stop_dist_model)$coefficients[2,3]`.
+\]
+
+Lastly, `Pr(>|t|)`, gives us the p-value of that test.
+
+\[
+\text{p-value} = `r summary(stop_dist_model)$coefficients[2,4]`
+\]
+
+## Value of B^0
+
+```{r}
+summary(stop_dist_model)$coefficients[1,]
+```
+
+
+## Storing B^1, B^0 values
+
+```{r}
+stop_dist_model_test_info = summary(stop_dist_model)$coefficients
+
+beta_0_hat      = stop_dist_model_test_info[1, 1] # Estimate
+beta_0_hat_se   = stop_dist_model_test_info[1, 2] # Std. Error
+beta_0_hat_t    = stop_dist_model_test_info[1, 3] # t value
+#beta_0_hat_t = sumary(stop_dist_model)$coefficient["(Intercept)","t_value"]
+
+beta_0_hat_pval = stop_dist_model_test_info[1, 4] # Pr(>|t|)
+
+beta_1_hat      = stop_dist_model_test_info[2, 1] # Estimate
+beta_1_hat_se   = stop_dist_model_test_info[2, 2] # Std. Error
+beta_1_hat_t    = stop_dist_model_test_info[2, 3] # t value
+#beta_1_hat_t = summary(stop_dist_model)$coefficients["speed","t_value"]
+beta_1_hat_pval = stop_dist_model_test_info[2, 4] # Pr(>|t|)
+```
+
+##test statistic
+
+```{r}
+#b^0
+
+summary(stop_dist_model)$coefficients["(Intercept)", "t-value"]
+```
+
+
+##P-value
+
+```{r}
+2 * pt(-abs(beta_1_hat_t), df = nrow(cars) -2)
+
+2 * pt(abs(beta_1_hat_t), df = nrow(cars) -2, lower.tail = FALSE)
+```
+
+# Stimulate SLR
+
+Function to simulate
+```{r}
+sim_slt = function(x, beta_0 = 10, beta_1 = 5, sigma = 1){
+  n = length(x)
+  epsilon = rnorm(n, mean = 0, sd = sigma)
+  y = beta_0 + beta_1 * x + epsilon
+  data.frame(predictor = x, respond = y)
+}
+```
+
+```{r}
+#simulate SLR
+set.seed(1)
+x = seq(1,20, length.out = 21)
+
+sim_data = sim_slt(x = x, beta_0 = 2, beta_1 = 0, sigma = 1)
+```
+
+```{r}
+#fit SLR
+
+sim_fit = lm(respond ~ predictor, data = sim_data)
+summary(sim_fit)$coefficients["predictor","Pr(>|t|)"]
+```
+
+
+
+# Standard Error
+
+```{r}
+summary(stop_dist_model)$coefficients[,2]
+
+#Beta 1 hat error
+
+summary(stop_dist_model)$coefficients[2,2]
+
+#beta 0 hat error
+
+summary(stop_dist_model)$coefficients[1,2]
+```
+
+
+Verifying Standard Error
+```{r}
+Sxx = sum((cars$speed - mean(cars$speed))^2)
+s_e = summary(stop_dist_model)$sigma
+s_e/sqrt(Sxx)
+```
+
+```{r}
+s_e/Sxx == beta_1_hat_se
+```
+
+#Critical Value - t - qt()
+
+```{r}
+
+#calculate critical value for 2 sides 99% CI
+
+(1 - 0.99)/2
+
+crit = qt(0.995, df = nrow(cars) - 2)
+```
+
+## Difference qt() vs pt()
+
+pt is probability for t
+
+```{r}
+pt(qt(0.995, df = nrow(cars) - 2), df = nrow(cars) - 2)
+```
+
+getting alpha/2
+
+```{r}
+1 - pt(qt(0.995, df = nrow(cars) - 2), df = nrow(cars) - 2)
+```
+
+
+# Confident Interval - confint()
+
+Computes confidence intervals in FITTED model
+
+```{r}
+confint(stop_dist_model, level = 0.99)
+```
+
+```{r}
+# Navigate way to get a specific bounce
+confint(stop_dist_model, level = 0.99)[2,2]
+```
+
+
+Using parm = to extract a particular parameters
+```{r}
+# confidence interval for particilar regression parameters
+confint(stop_dist_model, parm = "(Intercept)" ,level = 0.99) #estimate for Beta 0
+
+confint(stop_dist_model, parm = "speed" ,level = 0.99) #estimate for Beta 1
+```
+
+Verifying against the normal calculation
+
+
+```{r}
+#information about fitted model
+
+summary(stop_dist_model)
+```
+
+```{r}
+
+```
+
+## Getting lower bounce (beta hat 1)
+EST - CRIT * SE
+
+```{r}
+lower_bounce_beta1hat = beta_1_hat - crit * beta_1_hat_se
+```
+
+## Getting higher bounce (beta hat 1)
+EST + CRIT * SE
+
+```{r}
+higher_bounce_beta1hat = beta_1_hat - crit * beta_1_hat_se
+```
+
+# ConInv for Mean respond
+
+```{r}
+#new data
+new_speed = data.frame(speed = c(5,21))
+```
+
+```{r}
+#point estimate
+predict(stop_dist_model, newdata = new_speed)
+```
+
+
+```{r}
+# Interval for mean of y at an x of 21
+predict(stop_dist_model, newdata = new_speed,
+        interval = c("confidence"), level = 0.99
+        )
+```
+
+fit value is point estimate.
+
+# Predicion Interval for new Observation - Predict()
+
+```{r}
+# Interval we hope to capture new observation at x of 21
+predict(stop_dist_model, newdata = new_speed,
+        interval = c("prediction"), level = 0.99
+        )
+```
+
+
+
+
+
+

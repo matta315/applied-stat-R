@@ -1,0 +1,542 @@
+---
+title: 'Final Data Project - Predicting Housing Prices in King County, WA'
+author: "STAT 420, Summer 2020"
+date: '8/7/2020'
+output:
+  html_document: 
+    theme: readable
+    toc: yes  
+  pdf_document: default
+urlcolor: cyan
+---
+
+***
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80)
+library(knitr)
+library(lmtest)
+library(MASS)
+library(faraway)
+library(ggplot2)
+opts_chunk$set(cache = TRUE, autodep = TRUE)
+```
+
+# Introduction
+
+The members of our group reside in King County, WA. Home to Seattle, WA, the King County housing market has been and continues to be one of the strongest markets in the United States due to being the headquarters of companies like Amazon, Microsoft, and Starbucks among many others. According to a recent [article](https://www.realtor.com/news/trends/these-markets-have-recovered-the-most/), the Seattle housing market has had the second strongest recovery in the U.S. since the economic fallout of the COVID-19 pandemic. As residents, we have personal interest in housing prices in King County should we be purchasing a home here in the near future.
+
+This data project aims to find a model for predicting the price of a house in King County, WA, given the house's attributes. We are focusing on using the model for prediction, and aren't concerned with using it to explain  the relationship between the model variables. We are interested in learning how well historical house sales data can be used to predict future house sale prices.
+
+## Data Set
+
+In order to build a model for King County house price prediction, we will be using a [data set](https://www.kaggle.com/harlfoxem/housesalesprediction?select=kc_house_data.csv) from Kaggle containing sales price information for homes sold in King County between May 2014 and May 2015. While the data is 5 years old and housing prices have increased since 2015, the data set is still useful for finding a model that can potentially be updated with recent home appraisal data. The raw data set consists of 21,613 observations and the following 21 variables:
+
+- **id**: A unique id for the observation
+- **date**: The date of sale
+- **price**: The sales prices
+- **bedrooms**: The number of bedrooms
+- **bathrooms**: The number of bathrooms
+- **sqft_living**: The square footage of the living space
+- **sqft_lot**: The square footage of the lot
+- **floors**: The number of floors
+- **waterfront**: '1' if the house has a waterfront, '0' if not
+- **view**: A rating from 0 - 4 indicating how good the view is (4 is best)
+- **condition**: A rating from 1 - 5 indicating the building condition (5 is best)
+- **grade**: A classification from 1 - 13 indicating the construction quality (13 is best)
+- **sqft_above**: The square footage above ground
+- **sqft_basement**: The square footage below ground
+- **yr_built**: The year built
+- **yr_renovated**: The year renovated, '0' if never renovated
+- **zipcode**: The 5 digit zipcode of the house
+- **lat**: The latitude
+- **long**: The longitute
+- **sqft_living15**: The average square footage of the living spaces of the closest 15 houses
+- **sqft_lot15**: The average square footage of the lots of the closest 15 houses
+
+```{r}
+data = read.csv("kc_house_data.csv")
+str(data)
+```
+
+Plotting `long` vs. `lat` and coloring by `zipcode`, we get a visual sense of King County, WA.
+
+```{r echo=FALSE}
+plot(data$long, data$lat, col = as.numeric(data$zipcode), pch = 20, cex = 1.5,
+     xlab = "Longitude",
+     ylab = "Latitude",
+     main = "Home Sales by Zip Code in King County, WA")
+```
+
+We will be using the numeric variable `price` as the response in our prediction model.
+
+Through out the project you will see $LOOCV RMSE$, $RSE$ and adjusted $R^2$ come up oftens as main metrix we are using to access models
+
+***
+
+# Methods
+
+## Data Cleaning
+
+The data set is already very clean with no missing values.
+
+```{r}
+all.equal(data, na.omit(data))
+```
+
+However, the original dataset only includes data type as int and num, we have decided to converting some of varibles to factor, changing some formats, and selecting variable that we find the most useful for our model.
+
+Some of the change including:
+
+- *Added new factor variable `month` from the `date` variable*: Allow us to have a better predicting using `monthly` period since the original dataset only contains sale prices for a one year period
+- *Added `age` variable* : The year built is mostly useful in knowing how old the house is, so we create a `age` variable representing the age of the house in years from the `yr_built` variable. Similarly, a renovated house can be considered as new, so we use the `yr_renovated` variable for calculating the `age` variable when appropriate.
+- *Remove some variables*: The `id`, `lat` and `long` variables are not meaningful or useful for prediction, so we remove them from the data set along with the `date`, `yr_built` and `yr_renovated` variables.
+- *Coerce some variables to factors*: We coerce the `waterfront`, `view`, `condition`, `grade`, `floors`, `bedrooms`, `bathrooms` and `zipcode` variables to be factor variables.
+
+
+```{r, echo=FALSE}
+month = as.factor(substr(data$date, 5, 6))
+age = as.integer(substr(data$date, 1, 4)) - ifelse(data$yr_renovated == 0, as.integer(data$yr_built), as.integer(data$yr_renovated))
+data = subset(data, select = -c(id, lat, long, date, yr_built, yr_renovated))
+data$waterfront = as.factor(data$waterfront)
+data$view = as.factor(data$view)
+data$condition = as.factor(data$condition)
+data$grade = as.factor(data$grade)
+data$floors = as.factor(data$floors)
+data$bedrooms = as.factor(data$bedrooms)
+data$bathrooms = as.factor(data$bathrooms)
+data$zipcode = as.factor(data$zipcode)
+data = cbind(data, month, age)
+```
+
+Below is the snapshot of our final data after cleaning. The new dataset still consists of `21,613` observations reduced to `17` variables. Each of which are meaningful and may be useful for predicting housing prices.
+
+```{r}
+str(data)
+```
+
+## Exploratory Analysis
+
+To begin exploring the data, we will look at the correlation between the numeric variables visually and numerically.
+
+```{r}
+numeric_data = subset(data, select = c(price, sqft_living, sqft_lot, sqft_above, sqft_basement, sqft_living15, sqft_lot15))
+```
+
+
+```{r}
+pairs(numeric_data, col = "dodgerblue")
+```
+
+Here we note the higher collinearity between the `sqft_living`, `sqft_above` and `sqft_living15` variables, as well as between the `sqft_lot` and `sqft_lot15` variables.
+
+```{r}
+cor(numeric_data)
+```
+ 
+Next, we look at the coefficient of determination for each of the variables in the data set to get a sense of how well the variation in the response is explained by each variable. Specifically, we will calculate the $R^2$ for each possible predictor variable using the simple linear regression model with `price` as the response.
+
+```{r}
+calc_slr_r2 = function (predictor) {
+  summary(lm(as.formula(paste("price ~ ", predictor)), data = data))$r.squared
+}
+
+predictors = subset(names(data), names(data) != "price")
+slr_r2 = rep(0, length(predictors))
+for (i in 1:length(predictors)) {
+  slr_r2[i] = calc_slr_r2(predictors[i])
+}
+predictors_slr_r2 = cbind(predictors, round(slr_r2, digits = 4))
+```
+
+Sorting these predictors by their SLR $R^2$ values we see the top 6 predictor variables have at least twice as large of an $R^2$ value than the rest of the variables.
+
+```{r echo=FALSE}
+table_data = data.frame(predictors_slr_r2[order(predictors_slr_r2[, 2], decreasing = TRUE), ])
+names(table_data) = c("Predictor", "SLR $R^2$")
+knitr::kable(table_data, align = rep("c", 2), escape = FALSE)
+```
+
+## Inital Model Selection
+
+```{r, echo=FALSE}
+get_metrics = function(model) {
+  hats = hatvalues(model)
+  # Change hat values of 1 to avoid dividing by zero
+  hats[hats == 1] = 0.99
+  table_data = data.frame(sqrt(mean((resid(model) / (1 - hats)) ^ 2)),
+              summary(model)$sigma, summary(model)$adj.r.squared)
+  names(table_data) = c("LOOCV RMSE", "RSE", "Adjusted $R^2$")
+  knitr::kable(table_data, align = rep("c", 2), escape = FALSE)
+}
+```
+
+We begin our model selection by starting with a fully additive model using `price` as the response and the rest of the variables as predictors
+
+```{r}
+fit_add_full = lm(price ~ ., data = data)
+get_metrics(fit_add_full)
+```
+
+We see that the adjusted $R^2$ value is pretty good, however the LOOCV $RMSE$  and $RSE$ values larger than we expected.
+
+We then performed a backward selection search starting with this model using both AIC and BIC and the results ended up to be the same.
+
+```{r}
+back_aic = step(fit_add_full, trace = FALSE)
+back_bic = step(fit_add_full, k = log(nrow(data)), trace = FALSE)
+```
+
+```{r}
+all.equal(length(coef(fit_add_full)), length(coef(back_aic)), length(coef(back_bic)))
+```
+
+Thinking about the cause of high RMSE we tested an alternative additive model using only the 6 predictors with high SLR $R^2$ values noted in the the exploratory analysis, but find that all the metrics get worse.
+
+```{r}
+fit_add_small = lm(price ~ grade + sqft_living + zipcode + sqft_above + bathrooms + sqft_living15, data = data)
+get_metrics(fit_add_small)
+```
+
+## Model Improvements
+
+### First Model 
+
+From the numerical correlation analysis, we saw that the response variable `price` had the highest correlation with the `sqft_living` variable.
+
+```{r}
+plot(price ~ sqft_living, data = data, col = "grey", pch = 20, cex = 1.5,
+     main = "Housing Prices By Sq. Ft.")
+abline(lm(price ~ sqft_living, data = data), col = "darkorange", lwd = 2)
+```
+
+The correlation does not appear to be linear, so we try a log transformation on the response.
+
+```{r}
+plot(log(price) ~ sqft_living, data = data, col = "grey", pch = 20, cex = 1.5,
+     main = "Housing Prices By Sq. Ft.")
+abline(lm(log(price) ~ sqft_living, data = data), col = "darkorange", lwd = 2)
+```
+
+The correlation seems to improve, but still looks like it has some issues, so we try a log transformation on the predictor next.
+
+```{r}
+plot(log(price) ~ log(sqft_living), data = data, col = "grey", pch = 20, cex = 1.5,
+     main = "Housing Prices By Sq. Ft.")
+abline(lm(log(price) ~ log(sqft_living), data = data), col = "darkorange", lwd = 2)
+```
+
+The correlation looks much better now, so we incorporate these log transformations into our model and look at the metrics.
+
+```{r}
+fit_log = lm(log(price) ~ . - sqft_living + log(sqft_living), data = data)
+get_metrics(fit_log)
+```
+
+We see that the adjusted $R^2$ value has improved and both the LOOCV $RMSE$ and $RSE$ have decreased significantly. When experimenting with the same log transformation with the other numerical predictors, the model either did not improve, or resulted in a much higher LOOCVE $RMSE$ value indicating overfitting.
+
+Next we try to remove some unusual observations to see if they are affecting the model results. First we look for any outliers in the data set.
+
+```{r}
+std_resid = rstandard(fit_log)
+length(std_resid[abs(std_resid) > 2]) / length(std_resid)
+```
+
+We find observations with large standard residuals account for about 5% of the observations, so we remove these outliers from the data set, fit the model using the new data, and look at the metrics.
+
+```{r}
+out_data = subset(data, abs(std_resid) <= 2)
+fit_log_out = lm(log(price) ~ . - sqft_living + log(sqft_living), data = out_data)
+get_metrics(fit_log_out)
+```
+
+Each of the metrics are improved. Finally we look for any influential observations.
+
+```{r}
+cooks_dist = cooks.distance(fit_log_out)
+length(cooks_dist[cooks_dist > 4 / length(cooks_dist)]) / length(cooks_dist)
+```
+
+We find observations with large Cook's Distance also account for about 5% of the remaining observations, so we remove these influential observations from the data set, fit the model using the new data, and look at the metrics.
+
+```{r}
+inf_data = subset(out_data, cooks_dist < 4 / length(cooks_dist))
+fit_log_inf = lm(log(price) ~ . - sqft_living + log(sqft_living), data = inf_data)
+get_metrics(fit_log_inf)
+```
+
+The metrics again improved, and look really good.
+
+After experimenting removing variables with high collinearity noted in the exploratory analysis, we found we could remove the `sqft_lot15` variable from the model and get slightly better metrics and one less predictor. However, removing the outliers and influential observations from this model resulted in a much higher LOOCV $RMSE$ value, so we left the `sqft_lot15` variable in the model.
+
+### Second Model
+
+Even though this additive model looks promising, we wanted to see if there might be any forms of models that perform better.
+
+We used the same selection and improvement methods described above with the additive form
+
+Among 7 numeric variables we are now only choose to use $sqft_living$ & $sqft_living15$ since they are both highly corelated to $price$ and not as correlated to each other.
+
+Also one of the curiosities that we have while doing this project was whether differnt zipcode drives different price range for Seattle Housing. Thefore, we also use $Zipcode$ as factor variable and perform interaction with 2 other main variables
+
+```{r}
+fit_int = lm(log(price) ~ log(sqft_living15) + log(sqft_living) + zipcode + sqft_living:zipcode + sqft_living15:zipcode, data = data)
+```
+
+
+Performing cleaning outliners and influences
+
+```{r}
+# Defining outliners
+outliner = as.vector(as.integer(names(rstandard(fit_int)[abs(rstandard(fit_int)) > 2])))
+
+# Defining high influence points
+high_influence = as.vector(which(cooks.distance(fit_int)> 4/ length(cooks.distance(fit_int))))
+
+# New dataset
+tobeRemove = c(outliner,high_influence)
+new_data = data[-tobeRemove,]
+```
+
+```{r}
+fit_int_inf = lm(log(price) ~ log(sqft_living15) + log(sqft_living) + zipcode + sqft_living:zipcode + sqft_living15:zipcode, data = new_data)
+
+get_metrics(fit_int_inf)
+```
+
+
+This metrics for this second interaction model are also very good.
+
+***
+
+# Results
+
+## Comparing Models
+
+Comparing our two models, we see the additive model outperforms the interaction model in all metrics with fewer parameters, so we choose the additive model as the better model for prediction.
+
+```{r echo=FALSE}
+hats_log = hatvalues(fit_log_inf)
+# Change hat values of 1 to avoid dividing by zero
+hats_log[hats_log == 1] = 0.99
+loocv_rmse_log = sqrt(mean((resid(fit_log_inf) / (1 - hats_log)) ^ 2))
+
+hats_int = hatvalues(fit_int_inf)
+# Change hat values of 1 to avoid dividing by zero
+hats_int[hats_int == 1] = 0.99
+loocv_rmse_int = sqrt(mean((resid(fit_int_inf) / (1 - hats_int)) ^ 2))
+  
+table_data = data.frame(c("LOOCV RMSE", "RSE", "Adjusted $R^2$", "Number of Parameters"),
+                        c(loocv_rmse_log, summary(fit_log_inf)$sigma, summary(fit_log_inf)$adj.r.squared, length(coef(fit_log_inf))),
+                        c(loocv_rmse_int, summary(fit_int_inf)$sigma, summary(fit_int_inf)$adj.r.squared, length(coef(fit_int_inf))))
+
+names(table_data) = c("Metric", "Additive Model", "Interaction Model")
+knitr::kable(table_data, align = rep("c", 2), escape = FALSE)
+```
+
+```{r}
+model = fit_log_inf
+```
+
+## Testing the Model
+
+When testing the model on unseen data by splitting the data set into training (70%) and testing (30%) sets, we see the model performs well on unseen data, with a very small difference between the train and test RMSE.
+
+```{r}
+set.seed(1)
+trn_idx = sample(1:nrow(inf_data), nrow(inf_data) * .7)
+trn_data = inf_data[trn_idx, ]
+tst_data = inf_data[-trn_idx, ]
+
+model_trn = lm(log(price) ~ . - sqft_living + log(sqft_living), data = trn_data)
+trn_rmse = sqrt(mean(resid(model_trn)^2))
+
+# Exclude unseen data with unseen factor levels
+tst_data = tst_data[tst_data$bathrooms %in% model_trn$xlevels[["bathrooms"]],] 
+tst_rmse = sqrt(mean((log(tst_data$price) - predict(model_trn, newdata = tst_data))^2))
+```
+
+```{r, echo=FALSE}
+table_data = data.frame(trn_rmse, tst_rmse, tst_rmse - trn_rmse)
+names(table_data) = c("Train RMSE", "Test RMSE", "RMSE Difference")
+knitr::kable(table_data, align = rep("c", 2), escape = FALSE)
+```
+
+
+Plotting the actual vs predicted prices on the test data set, we see the model performs reasonably well.
+
+```{r}
+predicted = exp(predict(model_trn, newdata = tst_data))
+actual = tst_data$price
+```
+
+```{r echo=FALSE}
+plot(actual, predicted, col = "grey", pch = 20, cex = 1.5,
+     xlab = "Actual", ylab = "Predicted", main = "King County, WA House Prices")
+abline(a = 0, b = 1, col = "orange", lwd = 2)
+```
+
+The model has an average percent error of about 10%, which isn't as low as we would like, but is still low enough to be useful for predicting house prices.
+
+```{r}
+mean(abs(predicted - actual) / predicted) * 100
+```
+
+***
+
+# Discussion
+
+## Model Issues
+
+Since we have chosen a linear model for our prediction, we check the assumptions of the model. Both the fitted vs. residuals plot and the normal QQ plot look pretty good.
+
+```{r echo=FALSE, fig.height=5, fig.width=10}
+par(mfrow = c(1, 2))
+plot(fitted(model), resid(model), col = "grey", pch = 20,
+xlab = "Fitted", ylab = "Residuals", main = "Data from Model")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+qqnorm(resid(model), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(model), col = "dodgerblue", lwd = 2)
+```
+
+- **Fitted vs Residual graph**: The mean of the residuals looks to be right at 0, so the linearity assumption of our model appears to be valid. The spread of the residuals looks to be the same except for on the far right. The constant variance assumption of the model may be violated, but overall the fitted vs residual plot looks good.
+
+- **QQ Plot**: The normal QQ plot has some issues at the tails. The points of the plot closely follow a straight line between the middle quantiles however, so overall the normal QQ plot looks good, but the normality assumption of the model is likely violated as well.
+
+- **Other test**: Using the Breush-Pagan and Shapiro-Wilk tests, we confirm the constant variance and normality assumptions of the model are indeed violated.
+
+```{r}
+bptest(model)$p.value
+shapiro.test(sample(resid(model), 5000))$p.value
+```
+
+While these p-values are small, they did improve throughout the model selection improvement process when removing outliers and influential observations. Additionally, because the goal of our model is prediction, the assumption violations are less impactful because we are not aiming for explanation via inference.
+
+Similarly, even though multicollinearity exists in our model as noted in the exploratory analysis section above, and as evidenced by the many predictors with high VIF values shown below, we can still be confident in our model when used for prediction, even though it would be very bad at explaing the relationship between the response and predictors.
+
+```{r}
+vif(model)[vif(model) > 5]
+```
+
+## Metrics
+
+```{r echo=FALSE}
+table_data = data.frame(c("LOOCV RMSE", "RSE", "Adjusted $R^2$", "AIC", "BIC", "Average % Error"),
+               c(loocv_rmse_log, summary(model)$sigma, summary(model)$adj.r.squared,
+                 AIC(model), BIC(model), mean(abs(predicted - actual) / predicted) * 100))
+
+names(table_data) = c("Metric", "Model")
+knitr::kable(table_data, align = rep("c", 2), escape = FALSE)
+```
+
+
+## Discuss metrics above/Commentary/In-depth discussion of best model in context. Explanation vs Prediction/ How is our model useful?
+
+As George E.P.Box said
+
+*"All models are wrong, but some are useful"*
+
+Even though our tests for normality and constant variable didn't reach the result that we were hoping for. With the intention of building a model that can be used for prediction a house price in Seattle market, the model we picked serves the purpose.
+
+Below are some scenarios where our model can apply in real life practice
+
+Some of the default variable
+
+- **bedroom** = 2
+- **bedroom** = 1
+- **waterfront** = 0
+- **zipcode** = 98000
+- **sqft_living** = `r mean(data$sqft_living)`,
+- **sqft_lot** = `r mean(data$sqft_lot)`,
+- **floors** = 1,
+- **view** = 1,
+- **condition** = 3,
+- **grade** = 6,
+- **sqft_above** = `r mean(data$sqft_above)`,
+- **sqft_basement** = `r mean(data$sqft_basement)`,
+- **sqft_living15** = `r mean(data$sqft_living15)`,
+- **sqft_lot15** = `r mean(data$sqft_lot15)`,
+- **month** = 05, 
+- **age** = `r mean(data$age)`,
+
+
+**Scenario 1** Mr.A wants to buy a unit in Seattle around GreenLake area (zipcode as 98155) with a requirement as 2 bedrooms, 1 bathroom with waterfront view. What price range he is expecting?
+
+Default_value
+```{r}
+mean(data$sqft_living15)
+mean(data$sqft_lot15)
+```
+
+
+Runing our model we have
+```{r}
+a_house = data.frame(bedrooms = '2',
+                     bathrooms = '1',
+                     waterfront = '1',
+                     zipcode = '98115',
+                     sqft_living = mean(data$sqft_living),
+                     sqft_lot = mean(data$sqft_lot),
+                     floors = '1',
+                     view = '1',
+                     condition = '3',
+                     grade = '6',
+                     sqft_above = mean(data$sqft_above),
+                     sqft_basement = mean(data$sqft_basement),
+                     sqft_living15 = mean(data$sqft_living),
+                     sqft_lot15 = mean(data$sqft_lot15),
+                     month = '05', 
+                     age = 10
+                     )
+
+a_house_predict = exp(predict(model, a_house, interval = "prediction", level = 0.95 ))
+
+a_house_predict
+```
+
+Based on information Mr.A provide, we predicted the dream house that he'd like will fall into the price range lowest at `$838,867` and highest at `$1M` in 2015
+
+**Scenario 2** Using a current housing data on Redfin, we are looking to see if this house is overpriced or reasonable based on data of Seattle's Housing in 2015
+
+The House example to use with price of $535,000$
+Link: https://www.redfin.com/WA/Seattle/3220-SW-Morgan-St-98126/home/98876135
+
+```{r}
+b_house = data.frame(bedrooms = '3',
+                     bathrooms = '2',
+                     waterfront = '0',
+                     zipcode = '98126',
+                     sqft_living = 1264,
+                     sqft_lot = 885,
+                     floors = '2',
+                     view = '0',
+                     condition = '3',
+                     grade = '12',
+                     sqft_above = 1264,
+                     sqft_basement = 0,
+                     sqft_living15 = mean(data$sqft_living),
+                     sqft_lot15 = mean(data$sqft_lot15),
+                     month = '08', 
+                     age = 5                     )
+
+```
+
+```{r}
+b_house_predict = exp(predict(model, b_house, interval = "prediction", level = 0.95 ))
+
+b_house_predict
+```
+
+According to 2020's housing data, this house which is listed in August-2020 still fall into the range of reasonable price of the market.
+
+To improve this model in the future we could consider using some most updated data for 2020.
+
+***
+
+# Appendix
+
+## Group Members
+
+- Anh Nguyen, netid: anhn4
+- Noah Chang, netid: noahc4

@@ -1,0 +1,359 @@
+---
+title: "Week 4 - MLR"
+author: "Anh Nguyen"
+date: "6/10/2020"
+output: html_document
+---
+# MLR - load & manipulate data
+
+```{r}
+# read the data from the web
+autompg = read.table(
+  "http://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
+  quote = "\"",
+  comment.char = "",
+  stringsAsFactors = FALSE)
+# give the dataframe headers
+colnames(autompg) = c("mpg", "cyl", "disp", "hp", "wt", "acc", "year", "origin", "name")
+# remove missing data, which is stored as "?"
+autompg = subset(autompg, autompg$hp != "?")
+# remove the plymouth reliant, as it causes some issues
+autompg = subset(autompg, autompg$name != "plymouth reliant")
+# give the dataset row names, based on the engine, year and name
+rownames(autompg) = paste(autompg$cyl, "cylinder", autompg$year, autompg$name)
+# remove the variable for name, as well as origin
+autompg = subset(autompg, select = c("mpg", "cyl", "disp", "hp", "wt", "acc", "year"))
+# change horsepower from character to numeric
+autompg$hp = as.numeric(autompg$hp)
+# check final structure of data
+str(autompg)
+```
+
+```{r}
+View(autompg)
+```
+## Fitting MLR
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \epsilon_i, \qquad i = 1, 2, \ldots, n
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$. In this notation we will define:
+
+- $x_{i1}$ as the weight (`wt`) of the $i$th car.
+- $x_{i2}$ as the model year (`year`) of the $i$th car.
+
+```{r}
+mpg_model = lm(mpg ~ wt + year, data = autompg)
+coef(mpg_model)
+```
+
+```{r}
+summary(mpg_model)
+```
+
+## Matrix approach
+
+\[
+Y = X \beta + \epsilon
+\]
+
+```{r}
+n = nrow(autompg)
+p = length(coef(mpg_model))
+X = cbind(rep(1, n), autompg$wt, autompg$year)
+y = autompg$mpg
+```
+
+\[
+\hat{\beta} = \left(  X^\top X  \right)^{-1}X^\top y
+\]
+
+Linear Algebra for beta_hat
+
+```{r}
+(beta_hat = solve(t(X) %*% X) %*% t(X) %*% y)
+coef(mpg_model)
+```
+
+###Fitted Value
+
+\[
+\hat{y} = X \hat{\beta}.
+\]
+
+```{r}
+y_hat = X %*% beta_hat
+```
+
+### Residual Value
+
+\[
+e = y -\hat y
+\]
+
+```{r}
+e = y - y_hat
+```
+
+### se
+
+\[
+s_e^2 = \frac{\sum_{i=1}^n (y_i - \hat{y}_i)^2}{n - p} = \frac{e^\top e}{n-p}
+\]
+
+```{r}
+#Using matric calculation
+sqrt(t(e) %*% e / (n - p))
+```
+
+```{r}
+#Using y x calculation
+sqrt(sum((y - y_hat) ^ 2) / (n - p))
+```
+
+```{r}
+#getting data from summary
+
+summary(mpg_model)$sigma
+```
+
+###Multiple $R^2$
+
+```{r}
+mpg_model_small = lm(mpg ~ year, data = autompg)
+```
+
+```{r}
+coef(mpg_model)
+coef(mpg_model_small)
+```
+
+```{r}
+summary(mpg_model)$r.squared
+```
+
+## Interpreting MLR
+
+```{r}
+coef(lm(mpg ~ acc, data = autompg))
+coef(lm(mpg ~ acc + hp, data = autompg))
+```
+
+Sign of acc has change between 2 models.
+
+SLR: As Acc increase how it affect mile/gallon
+MLR: Consider acc variable + horse power
+
+#Simulation
+
+\[
+Y_i = 5 + -2 x_{i1} + 6 x_{i2} + \epsilon_i, \qquad i = 1, 2, \ldots, n
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2 = 16)$. Here we have two predictors, so $p = 3$.
+
+```{r}
+set.seed(1337)
+n = 100 # sample size
+p = 3
+
+beta_0 = 5
+beta_1 = -2
+beta_2 = 6
+sigma  = 4
+```
+
+```{r}
+x0 = rep(1, n)
+x1 = sample(seq(1, 10, length = n))
+x2 = sample(seq(1, 10, length = n))
+X = cbind(x0, x1, x2)
+C = solve(t(X) %*% X)
+```
+
+## Variance beta_hat
+```{r}
+C[3, 3]
+C[2 + 1, 2 + 1]
+sigma ^ 2 * C[2 + 1, 2 + 1]
+
+```
+
+## SD
+```{r}
+sqrt(sigma ^ 2 * C[2 + 1, 2 + 1])
+```
+
+## Fitted Value
+```{r}
+# Storing variable
+
+y = rep(0,n)
+num_sims = 10000
+beta_hat_2 = rep(0, num_sims)
+
+```
+
+
+```{r}
+for(i in 1:num_sims){
+  eps = rnorm(n, mean = 0, sd = sigma)
+  y = beta_0 + beta_1*x1 + beta_2 * x2 + eps
+  fit = lm(y ~ x1 + x2)
+  beta_hat_2[i] = coef(fit)[3]
+}
+```
+
+Verifying amount
+
+```{r}
+mean(beta_hat_2)
+var(beta_hat_2)
+```
+
+## Histogram
+```{r}
+hist(beta_hat_2, prob = TRUE, breaks = 20, 
+     xlab = expression(hat(beta)[2]), main = "", border = "dodgerblue")
+curve(dnorm(x, mean = beta_2, sd = sqrt(sigma ^ 2 * C[2 + 1, 2 + 1])), 
+      col = "darkorange", add = TRUE, lwd = 3)
+```
+
+## Function Beta_hat2
+
+```{r}
+sim_beta_hat_2 = function(){
+  eps = rnorm(n, mean = 0, sd = sigma)
+  y = beta_0 + beta_1*x1 + beta_2 * x2 + eps
+  fit = lm(y ~ x1 + x2)
+  coef(fit)[3]
+}
+```
+
+```{r}
+#Replicate function
+
+beta_hat_2_alt = replicate(n = num_sims, sim_beta_hat_2())
+```
+## Check timing
+
+```{r}
+system.time(
+  for(i in 1:num_sims){
+  eps = rnorm(n, mean = 0, sd = sigma)
+  y = beta_0 + beta_1*x1 + beta_2 * x2 + eps
+  fit = lm(y ~ x1 + x2)
+  beta_hat_2[i] = coef(fit)[3]
+}
+) 
+```
+
+```{r}
+system.time(
+  {beta_hat_2_alt = replicate(n = num_sims, sim_beta_hat_2())}
+)
+```
+
+# Confidence Interval
+
+```{r}
+confint(mpg_model, level = 0.99)
+```
+
+##CI for mean
+
+```{r}
+#new observation
+new_cars = data.frame(wt = c(3500,5000), year = c(76,81))
+new_cars
+
+```
+
+```{r}
+#calculate 
+predict(mpg_model, newdata = new_cars, interval = "confidence", level = 0.99)
+```
+
+
+##CI for prediction interval
+
+```{r}
+#calculate 
+predict(mpg_model, newdata = new_cars, interval = "prediction", level = 0.99)
+```
+
+## Plot
+
+```{r}
+plot(year ~ wt, data = autompg, pch = 20, col = "dodgerblue", cex = 1.5)
+points(new_cars, col = "darkorange", cex = 3, pch = "X")
+```
+
+## Critical Value
+```{r}
+confint(mpg_model, level = 0.99, parm = "wt")
+summary(mpg_model)$coef
+est = summary(mpg_model)$coef["wt","Estimate"]
+se = summary(mpg_model)$coef["wt","Std. Error"]
+```
+```{r}
+nrow(autompg)
+length(coef(mpg_model))
+
+#df = nrow - length
+```
+
+Calculate t-value
+
+```{r}
+(1 - 0.99)/2
+
+crit = abs(qt(0.005, df = 387))
+
+c(est - crit  * se, est + crit * se)
+```
+
+
+#Nested Model
+
+```{r}
+null_mpg_model = lm(mpg ~ wt + year, data = autompg)
+full_mpg_model = lm(mpg ~ wt + year + cyl + disp + hp + acc, data = autompg)
+#full_mpg_model = lm(mpg ~ ., data = autompg)
+anova(null_mpg_model, full_mpg_model)
+```
+
+```{r}
+summary(full_mpg_model)$r.squared
+summary(full_mpg_model)
+```
+
+## p-value
+
+```{r}
+null_mpg_model = lm(mpg ~ wt + year, data = autompg)
+full_mpg_model = lm(mpg ~ ., data = autompg)
+anova(null_mpg_model, full_mpg_model)
+```
+
+```{r}
+#Using F value as 0.5533
+#df1 = p - q : difference in full - small model
+#df2 = n - p
+nrow(autompg) - length(coef(full_mpg_model))
+
+1 - pf(0.5533, df1 = 4 , df2 = 383 )
+```
+
+# broom library
+
+```{r}
+library(broom)
+
+cat_model = lm(Hwt ~ Bwt, data = cats)
+
+glance(cat_model)$p.value
+```
+
+

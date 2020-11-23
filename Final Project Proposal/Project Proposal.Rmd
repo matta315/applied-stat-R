@@ -1,0 +1,71 @@
+---
+title: "Project Proposal"
+author: "Anh Nguyen & Noah Chang"
+date: "7/17/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(tibble)
+```
+
+#**1. The names of the students who will be contributing to the group project**.
+Anh Nguyen 
+Noah Chang
+
+#**2. A tentative title for the project:**
+
+Predicting Housing Prices in KingCounty, WA
+
+#**3. Description of the data file (what they contain including number of variables and number of records). You do not necessarily have to list all the variables, but at least mention those of greatest importance**
+
+This file is containing 21,613 observations of residential houses sold in 2014 - 2014. We are looking to construct a model help predicting house price using available variable as:
+
+- Id
+- Date
+- Price
+- Bedrooms
+- Bathrooms
+- Sqft_living
+- Sqft_lot
+- Floors
+- Waterfront
+- View
+- Condition
+- Grade
+- Sqft_above
+- Sqft_basement
+- Yr_built
+- Yr_renovated
+- Zipcode
+- Lat
+- Long
+- Sqft_living15
+- Sqft_lot15
+
+#**4. Background information on the data sets, including specific citation of their source (so that I can also access it).**
+
+This dataset contains house sale prices for King County, which includes Seattle. It includes homes sold between May 2014 and May 2015.
+
+https://www.kaggle.com/harlfoxem/housesalesprediction?select=kc_house_data.csv
+
+#**5. A brief statement of the business, science, research, or personal interest you have in the data set which you hope to explore.**
+
+As both member in our team are residents in King County, WA, housing is one of topics we are both interested in. In the last couple years, housing market in WA has remaining hot. We want to use this exercise to understand the pricing indicators of King county's WA, what aspect would affect housing price the most, which zipcode is most affordable and might be interest in having a model to predict housing price for the future.
+
+#**6. Evidence that the data can be loaded into R. Load the data, and print the first few values of the response variable as evidence**
+
+
+```{r}
+data <-  read.csv("kc_house_data.csv")
+
+head(data,5)
+```
+
+```{r}
+nrow(data)
+
+ncol(data)
+```

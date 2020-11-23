@@ -1,0 +1,512 @@
+---
+title: "week 7"
+author: "Anh Nguyen"
+date: "7/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Dummy Variable
+
+```{r}
+mtcars
+```
+
+```{r}
+plot(mpg ~ hp, data = mtcars, cex = 2)
+```
+
+##Plotting with different variable
+col = am + 1 (color of AM is 1, pch = am + 1) # 2 correspond to red
+```{r}
+plot(mpg ~ hp, data = mtcars, col = am + 1, pch = am + 1, cex = 2)
+legend("topright", c("Automatic", "Manual"), col = c(1, 2), pch = c(1, 2))
+```
+
+##Simple Model/ Not counting am var
+We now fit the SLR model
+
+\[
+Y = \beta_0 + \beta_1 x_1 + \epsilon,
+\]
+
+where $Y$ is `mpg` and $x_1$ is `hp`. For notational brevity, we drop the index $i$ for observations.
+
+```{r}
+mpg_hp_slr = lm(mpg ~ hp, data = mtcars)
+```
+
+We then re-plot the data and add the fitted line to the plot.
+
+```{r}
+plot(mpg ~ hp, data = mtcars, col = am + 1, pch = am + 1, cex = 2)
+abline(mpg_hp_slr, lwd = 3, col = "grey")
+legend("topright", c("Automatic", "Manual"), col = c(1, 2), pch = c(1, 2))
+```
+## New model with a variable
+Our new model is
+
+\[
+Y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \epsilon,
+\]
+
+where $x_1$ and $Y$ remain the same, but now
+
+\[
+x_2 =
+  \begin{cases}
+   1 & \text{manual transmission} \\
+   0       & \text{automatic transmission}
+  \end{cases}.
+\]
+
+```{r}
+mpg_hp_add = lm(mpg ~ hp + am, data = mtcars)
+mpg_hp_add
+```
+
+For automatic transmissions, that is $x_2 = 0$, we have,
+
+\[
+Y = \beta_0 + \beta_1 x_1 + \epsilon.
+\]
+
+Then for manual transmissions, that is $x_2 = 1$, we have,
+
+\[
+Y = (\beta_0 + \beta_2) + \beta_1 x_1 + \epsilon.
+\]
+
+```{r}
+int_auto = coef(mpg_hp_add)[1]
+int_manu = coef(mpg_hp_add)[1] + coef(mpg_hp_add)[3]
+
+slope_auto = coef(mpg_hp_add)[2]
+slope_manu = coef(mpg_hp_add)[2]
+```
+
+### Plotting for dummy regression
+
+```{r}
+plot(mpg ~ hp, data = mtcars, col = am + 1, pch = am + 1, cex = 2)
+abline(int_auto, slope_auto, col = 1, lty = 1, lwd = 2) # add line for auto
+abline(int_manu, slope_manu, col = 2, lty = 2, lwd = 2) # add line for manual
+legend("topright", c("Automatic", "Manual"), col = c(1, 2), pch = c(1, 2))
+```
+
+### Testing
+\[
+H_0: \beta_2 = 0 \quad \text{vs} \quad H_1: \beta_2 \neq 0.
+\]
+
+
+To obtain the test statistic and p-value for the $t$-test, we would use
+
+```{r}
+summary(mpg_hp_add)$coefficients["am",]
+```
+
+To do the same for the $F$ test, we would use
+
+```{r}
+anova(mpg_hp_slr, mpg_hp_add)
+```
+
+
+# Factor Variable
+
+Reading Data
+```{r}
+autompg = read.table(
+  "http://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
+  quote = "\"",
+  comment.char = "",
+  stringsAsFactors = FALSE)
+# give the dataframe headers
+colnames(autompg) = c("mpg", "cyl", "disp", "hp", "wt", "acc", "year", "origin", "name")
+# remove missing data, which is stored as "?"
+autompg = subset(autompg, autompg$hp != "?")
+# remove the plymouth reliant, as it causes some issues
+autompg = subset(autompg, autompg$name != "plymouth reliant")
+# give the dataset row names, based on the engine, year and name
+rownames(autompg) = paste(autompg$cyl, "cylinder", autompg$year, autompg$name)
+# remove the variable for name
+autompg = subset(autompg, select = c("mpg", "cyl", "disp", "hp", "wt", "acc", "year", "origin"))
+# change horsepower from character to numeric
+autompg$hp = as.numeric(autompg$hp)
+# create a dummary variable for foreign vs domestic cars. domestic = 1.
+autompg$domestic = as.numeric(autompg$origin == 1)
+# remove 3 and 5 cylinder cars (which are very rare.)
+autompg = autompg[autompg$cyl != 5,]
+autompg = autompg[autompg$cyl != 3,]
+# the following line would verify the remaining cylinder possibilities are 4, 6, 8
+#unique(autompg$cyl)
+# change cyl to a factor variable
+autompg$cyl = as.factor(autompg$cyl)
+```
+
+Verifying stucture of data
+
+```{r}
+str(autompg)
+
+tibble::as.tibble(autompg)
+```
+
+Plotting
+
+```{r}
+mpg_disp_add = lm(mpg ~ disp + domestic, data = autompg)
+
+int_for = coef(mpg_disp_add)[1]
+int_dom = coef(mpg_disp_add)[1] + coef(mpg_disp_add)[3]
+
+slope_for = coef(mpg_disp_add)[2]
+slope_dom = coef(mpg_disp_add)[2]
+
+plot(mpg ~ disp, data = autompg, col = domestic + 1, pch = domestic + 1)
+abline(int_for, slope_for, col = 1, lty = 1, lwd = 2) # add line for foreign cars
+abline(int_dom, slope_dom, col = 2, lty = 2, lwd = 2) # add line for domestic cars
+legend("topright", c("Foreign", "Domestic"), pch = c(1, 2), col = c(1, 2))
+```
+
+## non-numeric dummy
+
+```{r}
+autompg$origin[autompg$domestic == 1] = "domestic"
+autompg$origin[autompg$domestic == 0] = "foreign"
+
+#autompg$origin = ifelse(autompg$origin == 1,"domestic","foreign")
+
+```
+
+## Changing to factor variable
+```{r}
+autompg$origin = as.factor(autompg$origin)
+
+is.factor(autompg$origin)
+```
+
+## Checking level of factor
+```{r}
+levels(autompg$origin)
+```
+## Comparing dummy vs Factor
+
+```{r}
+add_mod_dummy = lm (mpg ~ disp + domestic, data = autompg )
+add_mod_factor = lm (mpg ~ disp + origin, data = autompg )
+```
+
+Review of dummy
+
+```{r}
+add_mod_dummy
+```
+
+Review of factor
+
+```{r}
+add_mod_factor
+```
+
+Comparing dummy vs Factor
+
+```{r}
+predict(add_mod_dummy, data.frame(disp = 150, domestic = 1))
+```
+
+```{r}
+predict(add_mod_factor, data.frame(disp = 150, origin = "domestic"))
+```
+
+```{r}
+all.equal(fitted(add_mod_dummy), fitted(add_mod_factor))
+```
+
+# Factor with more than 2 levels
+
+```{r}
+is.factor(autompg$cyl)
+levels (autompg$cyl)
+```
+
+### Lm (add)
+
+```{r}
+mpg_disp_add_cyl = lm(mpg ~ disp + cyl, data = autompg)
+mpg_disp_add_cyl
+```
+- 4 Cylinder: $Y = \beta_0 + \beta_1 x + \epsilon$
+- 6 Cylinder: $Y = (\beta_0 + \beta_2) + \beta_1 x + \epsilon$
+- 8 Cylinder: $Y = (\beta_0 + \beta_3) + \beta_1 x + \epsilon$
+
+Notice that they all have the same slope. However, using the two dummy variables, we achieve the three intercepts.
+
+- $\beta_0$ is the average `mpg` for a 4 cylinder car with 0 `disp`.
+- $\beta_0 + \beta_2$ is the average `mpg` for a 6 cylinder car with 0 `disp`.
+- $\beta_0 + \beta_3$ is the average `mpg` for a 8 cylinder car with 0 `disp`.
+
+#### Intercept & slopt
+```{r}
+int_4cyl = coef(mpg_disp_add_cyl)[1]
+int_6cyl = coef(mpg_disp_add_cyl)[1] + coef(mpg_disp_add_cyl)[3]
+int_8cyl = coef(mpg_disp_add_cyl)[1] + coef(mpg_disp_add_cyl)[4]
+
+slope_all_cyl = coef(mpg_disp_add_cyl)[2]
+```
+
+#### Plot
+
+```{r}
+plot_colors = c("Darkorange", "Darkgrey", "Dodgerblue") #plot color
+plot(mpg ~ disp, data = autompg, col = plot_colors[cyl], pch = as.numeric(cyl))
+abline(int_4cyl, slope_all_cyl, col = plot_colors[1], lty = 1, lwd = 2)
+abline(int_6cyl, slope_all_cyl, col = plot_colors[2], lty = 2, lwd = 2)
+abline(int_8cyl, slope_all_cyl, col = plot_colors[3], lty = 3, lwd = 2)
+legend("topright", c("4 Cylinder", "6 Cylinder", "8 Cylinder"),
+       col = plot_colors, lty = c(1, 2, 3), pch = c(1, 2, 3))
+```
+# Interaction
+
+Loading data
+```{r}
+autompg = read.table(
+  "http://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
+  quote = "\"",
+  comment.char = "",
+  stringsAsFactors = FALSE)
+# give the dataframe headers
+colnames(autompg) = c("mpg", "cyl", "disp", "hp", "wt", "acc", "year", "origin", "name")
+# remove missing data, which is stored as "?"
+autompg = subset(autompg, autompg$hp != "?")
+# remove the plymouth reliant, as it causes some issues
+autompg = subset(autompg, autompg$name != "plymouth reliant")
+# give the dataset row names, based on the engine, year and name
+rownames(autompg) = paste(autompg$cyl, "cylinder", autompg$year, autompg$name)
+# remove the variable for name
+autompg = subset(autompg, select = c("mpg", "cyl", "disp", "hp", "wt", "acc", "year", "origin"))
+# change horsepower from character to numeric
+autompg$hp = as.numeric(autompg$hp)
+# create a dummary variable for foreign vs domestic cars. domestic = 1.
+autompg$domestic = as.numeric(autompg$origin == 1)
+# remove 3 and 5 cylinder cars (which are very rare.)
+autompg = autompg[autompg$cyl != 5,]
+autompg = autompg[autompg$cyl != 3,]
+# the following line would verify the remaining cylinder possibilities are 4, 6, 8
+#unique(autompg$cyl)
+# change cyl to a factor variable
+autompg$cyl = as.factor(autompg$cyl)
+```
+
+```{r}
+str(autompg)
+```
+## Num-Categ Interaction Model
+
+\[
+Y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2 + \epsilon,
+\]
+
+Interaction Model
+
+```{r}
+mpg_disp_int = lm(mpg ~ disp + domestic + disp:domestic, data = autompg)
+```
+
+Or
+
+```{r}
+mpg_disp_int2 = lm(mpg ~ disp * domestic, data = autompg)
+```
+
+Comparing 2 model coefficients
+
+```{r}
+coef(mpg_disp_int)
+coef(mpg_disp_int2)
+```
+
+### Testing Num-cat
+Interaction
+
+#### t-test
+Summary fitted value
+
+```{r}
+summary(mpg_disp_int)
+```
+Line disp: domestic is testing with $\beta_3$. p-value for $\beta_3$ is for t-test
+
+#### Anova f-test
+Comparing additive Model with Interaction model
+
+```{r}
+anova(mpg_disp_add,mpg_disp_int)
+```
+
+### Num-Cat Plotting 
+
+```{r}
+int_for = coef(mpg_disp_int)[1]
+int_dom = coef(mpg_disp_int)[1] + coef(mpg_disp_int)[3]
+
+slope_for = coef(mpg_disp_int)[2]
+slope_dom = coef(mpg_disp_int)[2] + coef(mpg_disp_int)[4]
+```
+
+```{r}
+plot(mpg ~ disp, data = autompg, col = domestic + 1, pch = domestic + 1)
+abline(int_for, slope_for, col = 1, lty = 1, lwd = 2) # line for foreign cars
+abline(int_dom, slope_dom, col = 2, lty = 2, lwd = 2) # line for domestic cars
+legend("topright", c("Foreign", "Domestic"), pch = c(1, 2), col = c(1, 2))
+```
+
+## Num-Num Interaction
+
+Where both disp & hp are numerics
+
+```{r}
+mpg_disp_add_hp = lm(mpg ~ disp + hp, data = autompg)
+mpg_disp_int_hp = lm(mpg ~ disp * hp, data = autompg)
+summary(mpg_disp_int_hp)
+```
+## Cylider example
+
+```{r}
+is.factor(autompg$cyl)
+levels(autompg$cyl)
+```
+
+### Model
+
+```{r}
+mpg_disp_int_cyl = lm(mpg ~ disp * cyl, data = autompg)
+
+mpg_disp_int_cyl
+```
+
+### Slopping
+
+```{r}
+int_4cyl = coef(mpg_disp_int_cyl)[1]
+int_6cyl = coef(mpg_disp_int_cyl)[1] + coef(mpg_disp_int_cyl)[3]
+int_8cyl = coef(mpg_disp_int_cyl)[1] + coef(mpg_disp_int_cyl)[4]
+
+slope_4cyl = coef(mpg_disp_int_cyl)[2]
+slope_6cyl = coef(mpg_disp_int_cyl)[2] + coef(mpg_disp_int_cyl)[5]
+slope_8cyl = coef(mpg_disp_int_cyl)[2] + coef(mpg_disp_int_cyl)[6]
+
+plot_colors = c("Darkorange", "Darkgrey", "Dodgerblue")
+plot(mpg ~ disp, data = autompg, col = plot_colors[cyl], pch = as.numeric(cyl))
+abline(int_4cyl, slope_4cyl, col = plot_colors[1], lty = 1, lwd = 2)
+abline(int_6cyl, slope_6cyl, col = plot_colors[2], lty = 2, lwd = 2)
+abline(int_8cyl, slope_8cyl, col = plot_colors[3], lty = 3, lwd = 2)
+legend("topright", c("4 Cylinder", "6 Cylinder", "8 Cylinder"),
+       col = plot_colors, lty = c(1, 2, 3), pch = c(1, 2, 3))
+```
+
+
+### Testing
+
+We will test,
+
+\[
+H_0: \gamma_2 = \gamma_3 = 0
+\]
+
+which represents the parallel regression lines we saw before,
+
+\[
+Y = \beta_0 + \beta_1 x + \beta_2 v_2 + \beta_3 v_3 + \epsilon.
+\]
+
+```{r}
+anova(mpg_disp_add_cyl,mpg_disp_int_cyl)
+```
+
+#Parameter
+\[
+Y = \mu_1 v_1 + \mu_2 v_2 + \mu_3 v_3 + \beta_1 x v_1 + \beta_2 x v_2 + \beta_3 x v_3 +\epsilon
+\]
+
+- 4 Cylinder: $Y = \mu_1 + \beta_1 x + \epsilon$
+- 6 Cylinder: $Y = \mu_2 + \beta_2 x + \epsilon$
+- 8 Cylinder: $Y = \mu_3 + \beta_3 x + \epsilon$
+
+## Fitted
+```{r}
+#Standard interation model
+lm(mpg ~ disp * cyl, data = autompg)
+
+#alternative interaction model
+lm(mpg ~ 0 + cyl + disp:cyl, data = autompg)
+```
+Below gives fitted intercept for each cylinder type
+- Give reference slope for 4 cylider and how to modify 6-8
+
+```{r}
+lm(mpg ~ 0 + cyl * disp, data = autompg)
+```
+
+## Compared 2 models
+
+```{r}
+all.equal(
+  fitted(lm(mpg ~ disp * cyl, data = autompg)),
+  fitted(lm(mpg ~ 0 + cyl + disp:cyl, data = autompg))
+)
+```
+
+# Big Model
+\[
+Y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3 + \beta_4 x_1 x_2 + \beta_5 x_1 x_3 + \beta_6 x_2 x_3 + \beta_7 x_1 x_2 x_3 + \epsilon.
+\]
+
+Here,
+
+- $Y$ is `mpg`.
+- $x_1$ is `disp`.
+- $x_2$ is `hp`.
+- $x_3$ is `domestic`, which is a dummy variable we defined, where `1` is a domestic vehicle.
+
+## Fitted model
+```{r}
+big_model = lm(mpg ~ disp * hp * domestic, data = autompg)
+
+#big_model = lm(mpg~ (disp + hp + domestic) ^3, data = autompg)
+
+coef(big_model)
+```
+
+## Testing
+
+\[
+H_0: \beta_7 = 0.
+\]
+
+So,
+
+- Full Model: $Y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3 + \beta_4 x_1 x_2 + \beta_5 x_1 x_3 + \beta_6 x_2 x_3 + \beta_7 x_1 x_2 x_3 + \epsilon$
+- Null Model: $Y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3 + \beta_4 x_1 x_2 + \beta_5 x_1 x_3 + \beta_6 x_2 x_3 + \epsilon$
+
+We fit the null model in `R` as `two_way_int_mod`, then use `anova()` to perform an $F$-test as usual.
+
+Creating 2 ways model
+
+```{r}
+two_way_int_mol = lm(mpg~disp * hp + disp * domestic + hp* domestic, data = autompg)
+#two_way_int_mol = lm(mpg~ (disp + hp + domestic) ^2, data = autompg)
+coef(two_way_int_mol)
+anova(two_way_int_mol,big_model)
+```
+
+## Mean square error
+
+```{r}
+mean(resid(big_model)^2)
+mean(resid(two_way_int_mol)^2)
+```
+

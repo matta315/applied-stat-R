@@ -1,0 +1,107 @@
+---
+title: "FinalProject (1)"
+author: "Anh Nguyen"
+date: "8/5/2020"
+output: html_document
+---
+#Data Cleaning
+```{r}
+library(faraway)
+```
+
+
+```{r}
+data = read.csv("kc_house_data.csv")
+all.equal(data, na.omit(data))
+```
+
+```{r}
+month = as.factor(substr(data$date, 5, 6))
+age = as.integer(substr(data$date, 1, 4)) - ifelse(data$yr_renovated == 0, as.integer(data$yr_built), as.integer(data$yr_renovated))
+data = subset(data, select = -c(id, lat, long, date, yr_built, yr_renovated))
+data$waterfront = as.factor(data$waterfront)
+data$view = as.factor(data$view)
+data$condition = as.factor(data$condition)
+data$grade = as.factor(data$grade)
+data$floors = as.factor(data$floors)
+data$bedrooms = as.factor(data$bedrooms)
+data$bathrooms = as.factor(data$bathrooms)
+data$zipcode = as.factor(data$zipcode)
+data = cbind(data, month, age)
+```
+
+Function
+
+```{r}
+get_metrics = function(model) {
+  metrics = c(sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2)),
+              summary(model)$sigma,
+              summary(model)$adj.r.squared)
+  names(metrics) = c("LOOCV RMSE", "RSE", "Adj. R Sqr")
+  metrics
+}
+
+#drawing plot
+draw_graph = function (model, pcol = "gray", lcol = "dodgerblue") {
+    par(mfrow = c(1,2))
+    #fitted vs residual plots
+    plot(fitted(model), resid(model), col = "grey", pch = 20,
+      xlab = "Fitted", ylab = "Residuals", main = "Fitted vs Residual Graph")
+      abline(h = 0, col = "darkorange", lwd = 2)
+      
+    #QQ Plot 
+    qqnorm(resid(model), main = "Normal Q-Q Plot" , col = pcol)
+    qqline(resid(model), col = lcol, lwd = 2)
+}
+```
+
+Among 7 numeric variables we are now choose to use $sqft_living$ & $sqft_living15$ since they are both highly corelated to $price$ and not as correlated to each other. Also one of the curiosities that we have while doing this project was whether differnt zipcode drives different price range for Seattle Housing, we have added also add interaction between 2 aboves variable with $Zipcode$
+```{r} 
+int_mod = lm(price ~ sqft_living +  sqft_living15 + zipcode + sqft_living:zipcode + sqft_living15:zipcode, data = data)
+get_metrics(int_mod)
+```
+
+```{r}
+draw_graph(int_mod)
+```
+
+Since the RMSE is high . Using log transformation for numeric variables + predictor
+```{r}
+#int_mod_1 = lm (log(price) ~ . - sqft_living - sqft_above + log(sqft_living) + I(sqft_living^2)  + sqft_living:zipcode , data = data)
+int_mod_1 = lm (log(price) ~  log(sqft_living15) + log(sqft_living) + zipcode  + sqft_living:zipcode + sqft_living15:zipcode, data = data)
+get_metrics(int_mod_1)
+```
+
+```{r}
+
+draw_graph(int_mod_1)
+```
+
+
+```{r}
+int_mod_2 = lm (log(price) ~  sqft_living15 + I(sqft_living15^2)  + sqft_living + I(sqft_living^2)+ zipcode  + sqft_living:zipcode + sqft_living15:zipcode, data = data)
+get_metrics(int_mod_2)
+```
+
+```{r}
+draw_graph(int_mod_2)
+```
+ 
+```{r}
+
+outliner = as.vector(as.integer(names(rstandard(int_mod_1)[abs(rstandard(int_mod_1)) > 2])))
+high_influence = as.vector(which(cooks.distance(int_mod_1)> 4/ length(cooks.distance(int_mod_1))))
+tobeRemove = c(outliner,high_influence)
+new_data = data[-tobeRemove,]
+
+```
+
+```{r}
+new_int_mod = lm (log(price) ~  log(sqft_living15) + log(sqft_living) + zipcode  + sqft_living:zipcode + sqft_living15:zipcode, data = new_data)
+get_metrics(new_int_mod)
+```
+
+```{r}
+draw_graph(new_int_mod)
+```
+

@@ -1,0 +1,532 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Project Proposal},
+  pdfauthor={Anh Nguyen \& Noah Chang},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\title{Project Proposal}
+\author{Anh Nguyen \& Noah Chang}
+\date{7/17/2020}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tibble)}
+\end{Highlighting}
+\end{Shaded}
+
+\#1. The names of the students who will be contributing to the group
+project. Anh Nguyen Noah Chang
+
+\#2. A tentative title for the project: \textbf{Predicting Housing
+Prices in KingCounty, WA}
+
+\#3. Description of the data file (what they contain including number of
+variables and number of records). You do not necessarily have to list
+all the variables, but at least mention those of greatest importance.
+
+This file is containing 21,613 observations of residential houses sold
+in 2014 - 2014. We are looking to construct a model help predicting
+house price using available variable as:
+
+\begin{itemize}
+\tightlist
+\item
+  Id
+\item
+  Date
+\item
+  Price
+\item
+  Bedrooms
+\item
+  Bathrooms
+\item
+  Sqft\_living
+\item
+  Sqft\_lot
+\item
+  Floors
+\item
+  Waterfront
+\item
+  View
+\item
+  Condition
+\item
+  Grade
+\item
+  Sqft\_above
+\item
+  Sqft\_basement
+\item
+  Yr\_built
+\item
+  Yr\_renovated
+\item
+  Zipcode
+\item
+  Lat
+\item
+  Long
+\item
+  Sqft\_living15
+\item
+  Sqft\_lot15
+\end{itemize}
+
+\#4. Background information on the data sets, including specific
+citation of their source (so that I can also access it).
+
+This dataset contains house sale prices for King County, which includes
+Seattle. It includes homes sold between May 2014 and May 2015.
+
+\url{https://www.kaggle.com/harlfoxem/housesalesprediction?select=kc_house_data.csv}
+
+\#5. A brief statement of the business, science, research, or personal
+interest you have in the data set which you hope to explore.
+
+As both member in our team are residents in King County, WA, housing is
+one of topics we are both interested in. In the last couple years,
+housing market in WA has remaining hot. We want to use this exercise to
+understand the pricing indicators of King county's WA, what aspect would
+affect housing price the most, which zipcode is most affordable and
+might be interest in having a model to predict housing price for the
+future.
+
+\#6. Evidence that the data can be loaded into R. Load the data, and
+print the first few values of the response variable as evidence.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{data <-}\StringTok{  }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"kc_house_data.csv"}\NormalTok{)}
+
+\KeywordTok{head}\NormalTok{(data, }\DecValTok{100}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##             id            date   price bedrooms bathrooms sqft_living sqft_lot
+## 1   7129300520 20141013T000000  221900        3      1.00        1180     5650
+## 2   6414100192 20141209T000000  538000        3      2.25        2570     7242
+## 3   5631500400 20150225T000000  180000        2      1.00         770    10000
+## 4   2487200875 20141209T000000  604000        4      3.00        1960     5000
+## 5   1954400510 20150218T000000  510000        3      2.00        1680     8080
+## 6   7237550310 20140512T000000 1225000        4      4.50        5420   101930
+## 7   1321400060 20140627T000000  257500        3      2.25        1715     6819
+## 8   2008000270 20150115T000000  291850        3      1.50        1060     9711
+## 9   2414600126 20150415T000000  229500        3      1.00        1780     7470
+## 10  3793500160 20150312T000000  323000        3      2.50        1890     6560
+## 11  1736800520 20150403T000000  662500        3      2.50        3560     9796
+## 12  9212900260 20140527T000000  468000        2      1.00        1160     6000
+## 13   114101516 20140528T000000  310000        3      1.00        1430    19901
+## 14  6054650070 20141007T000000  400000        3      1.75        1370     9680
+## 15  1175000570 20150312T000000  530000        5      2.00        1810     4850
+## 16  9297300055 20150124T000000  650000        4      3.00        2950     5000
+## 17  1875500060 20140731T000000  395000        3      2.00        1890    14040
+## 18  6865200140 20140529T000000  485000        4      1.00        1600     4300
+## 19    16000397 20141205T000000  189000        2      1.00        1200     9850
+## 20  7983200060 20150424T000000  230000        3      1.00        1250     9774
+## 21  6300500875 20140514T000000  385000        4      1.75        1620     4980
+## 22  2524049179 20140826T000000 2000000        3      2.75        3050    44867
+## 23  7137970340 20140703T000000  285000        5      2.50        2270     6300
+## 24  8091400200 20140516T000000  252700        2      1.50        1070     9643
+## 25  3814700200 20141120T000000  329000        3      2.25        2450     6500
+## 26  1202000200 20141103T000000  233000        3      2.00        1710     4697
+## 27  1794500383 20140626T000000  937000        3      1.75        2450     2691
+## 28  3303700376 20141201T000000  667000        3      1.00        1400     1581
+## 29  5101402488 20140624T000000  438000        3      1.75        1520     6380
+## 30  1873100390 20150302T000000  719000        4      2.50        2570     7173
+## 31  8562750320 20141110T000000  580500        3      2.50        2320     3980
+## 32  2426039314 20141201T000000  280000        2      1.50        1190     1265
+## 33   461000390 20140624T000000  687500        4      1.75        2330     5000
+## 34  7589200193 20141110T000000  535000        3      1.00        1090     3000
+## 35  7955080270 20141203T000000  322500        4      2.75        2060     6659
+## 36  9547205180 20140613T000000  696000        3      2.50        2300     3060
+## 37  9435300030 20140528T000000  550000        4      1.00        1660    34848
+## 38  2768000400 20141230T000000  640000        4      2.00        2360     6000
+## 39  7895500070 20150213T000000  240000        4      1.00        1220     8075
+## 40  2078500320 20140620T000000  605000        4      2.50        2620     7553
+## 41  5547700270 20140715T000000  625000        4      2.50        2570     5520
+## 42  7766200013 20140811T000000  775000        4      2.25        4220    24186
+## 43  7203220400 20140707T000000  861990        5      2.75        3595     5639
+## 44  9270200160 20141028T000000  685000        3      1.00        1570     2280
+## 45  1432701230 20140729T000000  309000        3      1.00        1280     9656
+## 46  8035350320 20140718T000000  488000        3      2.50        3160    13603
+## 47  8945200830 20150325T000000  210490        3      1.00         990     8528
+## 48  4178300310 20140716T000000  785000        4      2.50        2290    13416
+## 49  9215400105 20150428T000000  450000        3      1.75        1250     5963
+## 50   822039084 20150311T000000 1350000        3      2.50        2753    65005
+## 51  5245600105 20140916T000000  228000        3      1.00        1190     9199
+## 52  7231300125 20150217T000000  345000        5      2.50        3150     9134
+## 53  7518505990 20141231T000000  600000        3      1.75        1410     4080
+## 54  3626039271 20150205T000000  585000        2      1.75        1980     8550
+## 55  4217401195 20150303T000000  920000        5      2.25        2730     6000
+## 56  9822700295 20140512T000000  885000        4      2.50        2830     5000
+## 57  9478500640 20140819T000000  292500        4      2.50        2250     4495
+## 58  2799800710 20150407T000000  301000        3      2.50        2420     4750
+## 59  7922800400 20140827T000000  951000        5      3.25        3250    14342
+## 60  8079040320 20150223T000000  430000        4      3.00        1850     9976
+## 61  1516000055 20141210T000000  650000        3      2.25        2150    21235
+## 62  9558200045 20140828T000000  289000        3      1.75        1260     8400
+## 63  5072410070 20141021T000000  505000        3      1.75        2519     8690
+## 64  9528102996 20141207T000000  549000        3      1.75        1540     1044
+## 65  1189001180 20140603T000000  425000        3      2.25        1660     6000
+## 66  3253500160 20141120T000000  317625        3      2.75        2770     3809
+## 67  3394100030 20140909T000000  975000        4      2.50        2720    11049
+## 68  3717000160 20141009T000000  287000        4      2.50        2240     4648
+## 69  1274500060 20140825T000000  204000        3      1.00        1000    12070
+## 70  1802000060 20140612T000000 1325000        5      2.25        3200    20158
+## 71  1525059190 20140912T000000 1040000        5      3.25        4770    50094
+## 72  1049000060 20150105T000000  325000        3      2.00        1260     5612
+## 73  8820901275 20140610T000000  571000        4      2.00        2750     7807
+## 74  5416510140 20140710T000000  360000        4      2.50        2380     5000
+## 75  3444100400 20150316T000000  349000        3      1.75        1790    50529
+## 76  3276920270 20141105T000000  832500        4      4.00        3430    35102
+## 77  4036801170 20141013T000000  380000        4      1.75        1760     7300
+## 78  2391600320 20150420T000000  480000        3      1.00        1040     5060
+## 79  6300000287 20140609T000000  410000        3      1.00        1410     5060
+## 80  1531000030 20150323T000000  720000        4      2.50        3450    39683
+## 81  5104520400 20141202T000000  390000        3      2.50        2350     5100
+## 82  7437100340 20141222T000000  360000        4      2.50        1900     5889
+## 83  9418400240 20141028T000000  355000        2      1.00        2020     6720
+## 84  1523059105 20150128T000000  356000        3      1.50        1680     8712
+## 85  1133000671 20140602T000000  315000        3      1.00         960     6634
+## 86  4232902595 20141114T000000  940000        3      1.50        2140     3600
+## 87  2599001200 20141103T000000  305000        5      2.25        2660     8400
+## 88  3342103156 20140618T000000  461000        3      3.25        2770     6278
+## 89  1332700270 20140519T000000  215000        2      2.25        1610     2040
+## 90  3869900162 20140904T000000  335000        2      1.75        1030     1066
+## 91  2791500270 20140522T000000  243500        4      2.50        1980     7403
+## 92  5036300431 20150311T000000 1099880        5      2.75        3520     6353
+## 93  4168000060 20150226T000000  153000        3      1.00        1200    10500
+## 94  6021501535 20140725T000000  430000        3      1.50        1580     5000
+## 95  6021501535 20141223T000000  700000        3      1.50        1580     5000
+## 96  1483300570 20140908T000000  905000        4      2.50        3300    10250
+## 97  3422049190 20150330T000000  247500        3      1.75        1960    15681
+## 98  1099611230 20140912T000000  199000        4      1.50        1160     6400
+## 99   722079104 20140711T000000  314000        3      1.75        1810    41800
+## 100 7338200240 20140516T000000  437500        3      2.50        2320    36847
+##     floors waterfront view condition grade sqft_above sqft_basement yr_built
+## 1      1.0          0    0         3     7       1180             0     1955
+## 2      2.0          0    0         3     7       2170           400     1951
+## 3      1.0          0    0         3     6        770             0     1933
+## 4      1.0          0    0         5     7       1050           910     1965
+## 5      1.0          0    0         3     8       1680             0     1987
+## 6      1.0          0    0         3    11       3890          1530     2001
+## 7      2.0          0    0         3     7       1715             0     1995
+## 8      1.0          0    0         3     7       1060             0     1963
+## 9      1.0          0    0         3     7       1050           730     1960
+## 10     2.0          0    0         3     7       1890             0     2003
+## 11     1.0          0    0         3     8       1860          1700     1965
+## 12     1.0          0    0         4     7        860           300     1942
+## 13     1.5          0    0         4     7       1430             0     1927
+## 14     1.0          0    0         4     7       1370             0     1977
+## 15     1.5          0    0         3     7       1810             0     1900
+## 16     2.0          0    3         3     9       1980           970     1979
+## 17     2.0          0    0         3     7       1890             0     1994
+## 18     1.5          0    0         4     7       1600             0     1916
+## 19     1.0          0    0         4     7       1200             0     1921
+## 20     1.0          0    0         4     7       1250             0     1969
+## 21     1.0          0    0         4     7        860           760     1947
+## 22     1.0          0    4         3     9       2330           720     1968
+## 23     2.0          0    0         3     8       2270             0     1995
+## 24     1.0          0    0         3     7       1070             0     1985
+## 25     2.0          0    0         4     8       2450             0     1985
+## 26     1.5          0    0         5     6       1710             0     1941
+## 27     2.0          0    0         3     8       1750           700     1915
+## 28     1.5          0    0         5     8       1400             0     1909
+## 29     1.0          0    0         3     7        790           730     1948
+## 30     2.0          0    0         3     8       2570             0     2005
+## 31     2.0          0    0         3     8       2320             0     2003
+## 32     3.0          0    0         3     7       1190             0     2005
+## 33     1.5          0    0         4     7       1510           820     1929
+## 34     1.5          0    0         4     8       1090             0     1929
+## 35     1.0          0    0         3     7       1280           780     1981
+## 36     1.5          0    0         3     8       1510           790     1930
+## 37     1.0          0    0         1     5        930           730     1933
+## 38     2.0          0    0         4     8       2360             0     1904
+## 39     1.0          0    0         2     7        890           330     1969
+## 40     2.0          0    0         3     8       2620             0     1996
+## 41     2.0          0    0         3     9       2570             0     2000
+## 42     1.0          0    0         3     8       2600          1620     1984
+## 43     2.0          0    0         3     9       3595             0     2014
+## 44     2.0          0    0         3     7       1570             0     1922
+## 45     1.0          0    0         4     6        920           360     1959
+## 46     2.0          0    0         3     8       3160             0     2003
+## 47     1.0          0    0         3     6        990             0     1966
+## 48     2.0          0    0         4     9       2290             0     1981
+## 49     1.0          0    0         4     7       1250             0     1953
+## 50     1.0          1    2         5     9       2165           588     1953
+## 51     1.0          0    0         3     7       1190             0     1955
+## 52     1.0          0    0         4     8       1640          1510     1966
+## 53     1.0          0    0         4     7       1000           410     1950
+## 54     1.0          0    0         3     7        990           990     1981
+## 55     1.5          0    0         3     8       2130           600     1927
+## 56     2.0          0    0         3     9       2830             0     1995
+## 57     2.0          0    0         3     7       2250             0     2008
+## 58     2.0          0    0         3     8       2420             0     2003
+## 59     2.0          0    4         4     8       3250             0     1968
+## 60     2.0          0    0         3     8       1850             0     1991
+## 61     1.0          0    3         4     8       1590           560     1959
+## 62     1.0          0    0         3     7       1260             0     1954
+## 63     2.0          0    0         5     8       2519             0     1973
+## 64     3.0          0    0         3     8       1540             0     2014
+## 65     1.0          0    0         3     7       1110           550     1979
+## 66     1.5          0    0         5     7       1770          1000     1925
+## 67     2.0          0    0         3    10       2720             0     1989
+## 68     2.0          0    0         3     7       2240             0     2005
+## 69     1.0          0    0         4     7       1000             0     1968
+## 70     1.0          0    0         3     8       1600          1600     1965
+## 71     1.0          0    0         4    11       3070          1700     1973
+## 72     1.0          0    0         4     7       1260             0     1972
+## 73     1.5          0    0         5     7       2250           500     1916
+## 74     2.0          0    0         3     8       2380             0     2005
+## 75     1.0          0    0         5     7       1090           700     1965
+## 76     2.0          0    0         4    10       2390          1040     1986
+## 77     1.0          0    0         3     7        880           880     1956
+## 78     1.0          0    0         3     7       1040             0     1941
+## 79     1.0          0    0         4     7        910           500     1956
+## 80     2.0          0    0         3    10       3450             0     2002
+## 81     2.0          0    0         3     8       2350             0     2003
+## 82     2.0          0    0         3     7       1900             0     1992
+## 83     1.0          0    0         3     7       1010          1010     1948
+## 84     1.0          0    0         3     8       1680             0     1964
+## 85     1.0          0    0         3     6        960             0     1952
+## 86     2.0          0    0         3     9       1900           240     1925
+## 87     1.5          0    0         5     7       2660             0     1961
+## 88     2.0          0    0         3     9       1980           790     2006
+## 89     2.0          0    0         4     7       1610             0     1979
+## 90     2.0          0    0         3     7        765           265     2006
+## 91     2.0          0    0         3     7       1980             0     1988
+## 92     2.0          0    0         4    10       3520             0     2001
+## 93     1.0          0    0         3     7       1200             0     1962
+## 94     1.0          0    0         3     8       1290           290     1939
+## 95     1.0          0    0         3     8       1290           290     1939
+## 96     1.0          0    0         3     7       2390           910     1946
+## 97     1.0          0    0         3     7       1960             0     1967
+## 98     1.0          0    0         4     7       1160             0     1975
+## 99     1.0          0    0         5     7       1210           600     1980
+## 100    2.0          0    2         3     9       2320             0     1992
+##     yr_renovated zipcode     lat     long sqft_living15 sqft_lot15
+## 1              0   98178 47.5112 -122.257          1340       5650
+## 2           1991   98125 47.7210 -122.319          1690       7639
+## 3              0   98028 47.7379 -122.233          2720       8062
+## 4              0   98136 47.5208 -122.393          1360       5000
+## 5              0   98074 47.6168 -122.045          1800       7503
+## 6              0   98053 47.6561 -122.005          4760     101930
+## 7              0   98003 47.3097 -122.327          2238       6819
+## 8              0   98198 47.4095 -122.315          1650       9711
+## 9              0   98146 47.5123 -122.337          1780       8113
+## 10             0   98038 47.3684 -122.031          2390       7570
+## 11             0   98007 47.6007 -122.145          2210       8925
+## 12             0   98115 47.6900 -122.292          1330       6000
+## 13             0   98028 47.7558 -122.229          1780      12697
+## 14             0   98074 47.6127 -122.045          1370      10208
+## 15             0   98107 47.6700 -122.394          1360       4850
+## 16             0   98126 47.5714 -122.375          2140       4000
+## 17             0   98019 47.7277 -121.962          1890      14018
+## 18             0   98103 47.6648 -122.343          1610       4300
+## 19             0   98002 47.3089 -122.210          1060       5095
+## 20             0   98003 47.3343 -122.306          1280       8850
+## 21             0   98133 47.7025 -122.341          1400       4980
+## 22             0   98040 47.5316 -122.233          4110      20336
+## 23             0   98092 47.3266 -122.169          2240       7005
+## 24             0   98030 47.3533 -122.166          1220       8386
+## 25             0   98030 47.3739 -122.172          2200       6865
+## 26             0   98002 47.3048 -122.218          1030       4705
+## 27             0   98119 47.6386 -122.360          1760       3573
+## 28             0   98112 47.6221 -122.314          1860       3861
+## 29             0   98115 47.6950 -122.304          1520       6235
+## 30             0   98052 47.7073 -122.110          2630       6026
+## 31             0   98027 47.5391 -122.070          2580       3980
+## 32             0   98133 47.7274 -122.357          1390       1756
+## 33             0   98117 47.6823 -122.368          1460       5000
+## 34             0   98117 47.6889 -122.375          1570       5080
+## 35             0   98058 47.4276 -122.157          2020       8720
+## 36          2002   98115 47.6827 -122.310          1590       3264
+## 37             0   98052 47.6621 -122.132          2160      11467
+## 38             0   98107 47.6702 -122.362          1730       4700
+## 39             0   98001 47.3341 -122.282          1290       7800
+## 40             0   98056 47.5301 -122.180          2620      11884
+## 41             0   98074 47.6145 -122.027          2470       5669
+## 42             0   98166 47.4450 -122.347          2410      30617
+## 43             0   98053 47.6848 -122.016          3625       5639
+## 44             0   98119 47.6413 -122.364          1580       2640
+## 45             0   98058 47.4485 -122.175          1340       8808
+## 46             0   98019 47.7443 -121.977          3050       9232
+## 47             0   98023 47.3066 -122.371          1228       8840
+## 48             0   98007 47.6194 -122.151          2680      13685
+## 49             0   98115 47.6796 -122.301           970       5100
+## 50             0   98070 47.4041 -122.451          2680      72513
+## 51             0   98148 47.4258 -122.322          1190       9364
+## 52             0   98056 47.4934 -122.189          1990       9133
+## 53             0   98117 47.6808 -122.384          1410       4080
+## 54             0   98117 47.6989 -122.369          1480       6738
+## 55             0   98105 47.6571 -122.281          2730       6000
+## 56             0   98105 47.6597 -122.290          1950       5000
+## 57             0   98042 47.3663 -122.114          2250       4500
+## 58             0   98042 47.3663 -122.122          2690       4750
+## 59             0   98008 47.5880 -122.116          2960      11044
+## 60             0   98059 47.5059 -122.149          2270       8542
+## 61             0   98166 47.4336 -122.339          2570      18900
+## 62             0   98148 47.4366 -122.335          1290       8750
+## 63             0   98166 47.4428 -122.344          2500       9500
+## 64             0   98115 47.6765 -122.320          1580       3090
+## 65             0   98122 47.6113 -122.297          1440       4080
+## 66             0   98144 47.5747 -122.304          1440       4000
+## 67             0   98004 47.5815 -122.192          2750      11049
+## 68             0   98001 47.3378 -122.257          2221       4557
+## 69             0   98042 47.3621 -122.110          1010      12635
+## 70             0   98004 47.6303 -122.215          3390      20158
+## 71             0   98005 47.6525 -122.160          3530      38917
+## 72             0   98034 47.7362 -122.179          1640       4745
+## 73             0   98125 47.7168 -122.287          1510       7807
+## 74             0   98038 47.3608 -122.036          2420       5000
+## 75             0   98042 47.3511 -122.073          1940      50529
+## 76             0   98075 47.5822 -121.987          3240      35020
+## 77             0   98008 47.6034 -122.125          1680       7500
+## 78             0   98116 47.5636 -122.394           890       5060
+## 79             0   98133 47.7073 -122.340          1130       5693
+## 80             0   98010 47.3420 -122.025          3350      39750
+## 81             0   98038 47.3512 -122.008          2350       5363
+## 82             0   98038 47.3490 -122.031          1870       6405
+## 83             0   98118 47.5474 -122.291          1720       6720
+## 84             0   98059 47.4811 -122.149          1850       8797
+## 85             0   98125 47.7264 -122.310          1570       7203
+## 86             0   98119 47.6337 -122.365          2020       4800
+## 87             0   98092 47.2909 -122.189          1590       8165
+## 88             0   98056 47.5228 -122.199          1900       7349
+## 89             0   98056 47.5180 -122.194          1950       2025
+## 90             0   98136 47.5394 -122.387          1030       1106
+## 91             0   98023 47.2897 -122.372          1980       7510
+## 92             0   98199 47.6506 -122.391          2520       6250
+## 93             0   98023 47.3220 -122.351          1350      10500
+## 94             0   98117 47.6870 -122.386          1570       4500
+## 95             0   98117 47.6870 -122.386          1570       4500
+## 96          1991   98040 47.5873 -122.249          1950       6045
+## 97             0   98032 47.3576 -122.277          1750      15616
+## 98             0   98023 47.3036 -122.378          1160       6400
+## 99             0   98038 47.4109 -121.958          1650     135036
+## 100            0   98045 47.4838 -121.714          2550      35065
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{nrow}\NormalTok{(data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 21613
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{ncol}\NormalTok{(data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 21
+\end{verbatim}
+
+\end{document}

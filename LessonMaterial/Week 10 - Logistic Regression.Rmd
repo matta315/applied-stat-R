@@ -1,0 +1,396 @@
+---
+title: "Untitled"
+author: "Anh Nguyen"
+date: "7/22/2020"
+output: html_document
+---
+# Logistic Regression
+
+## Simulation
+```{r}
+sim_logistic_data = function(sample_size = 25, beta_0 = -2, beta_1 = 3) {
+  x = rnorm(n = sample_size)
+  eta = beta_0 + beta_1 * x
+  p = 1 / (1 + exp(-eta))
+  y = rbinom(n = sample_size, size = 1, prob = p)
+  data.frame(y, x)
+}
+```
+
+```{r}
+set.seed(1)
+example_data = sim_logistic_data()
+head(example_data)
+```
+
+## Logistic regression
+```{r}
+# ordinary linear regression
+fit_lm  = lm(y ~ x, data = example_data)
+# logistic regression
+fit_glm = glm(y ~ x, data = example_data, family = binomial(link = "logit"))
+```
+
+```{r}
+coef(fit_glm)
+```
+
+
+## Prdict y using Link
+
+$$
+\large
+\hat{\eta}({\bf x}) = -2.3 + 3.7x
+$$
+
+- Link is the default behavior
+```{r}
+predict(fit_glm, newdata = data.frame(x = 1.2), type = "link")
+```
+
+Returning the estimated linear combination of the predictors
+
+## Predict p(x) Response
+
+$$
+\large
+\hat{p}({\bf x}) = \frac{e^(-2.3 + 3.7x}){1 + e^(-2.3 + 3.7x)}
+$$
+
+```{r}
+predict(fit_glm, newdata = data.frame(x = 1.2), type = "response")
+```
+
+Find the probability of why Y is 1 given the x as 1.2
+
+## Plotting
+
+```{r}
+plot(y ~ x, data = example_data, 
+     pch = 20, ylab = "Estimated Probability", 
+     main = "Ordinary vs Logistic Regression")
+grid()
+abline(fit_lm, col = "darkorange")
+curve(predict(fit_glm, data.frame(x), type = "response"), 
+      add = TRUE, col = "dodgerblue", lty = 2)
+legend("topleft", c("Ordinary", "Logistic", "Data"), lty = c(1, 2, 0), 
+       pch = c(NA, NA, 20), lwd = 2, col = c("darkorange", "dodgerblue", "black"))
+```
+
+```{r}
+# Generate data
+set.seed(42)
+intercept = 10
+slope = -10
+example_data = sim_logistic_data(sample_size = 50, beta = intercept, beta_1 = slope)
+
+#Fit Model
+fit_glm = glm(y ~ x, data = example_data, family = binomial)
+
+# Check fitted Coefficients
+coef(fit_glm)
+```
+
+```{r}
+plot(y ~ x, data = example_data, 
+     pch = 20, ylab = "Estimated Probability", 
+     main = "True: Orange, Solid, Estimated: Blue, Dashed")
+grid()
+curve(predict(fit_glm, data.frame(x), type = "response"), 
+      add = TRUE, col = "dodgerblue", lty = 2)
+curve(boot::inv.logit(intercept + slope * x), 
+      add = TRUE, col = "darkorange", lty = 1)
+
+```
+
+$\beta_0$ seem to have some control in proportion of 0 & 1 in daa
+$\beta_1$ seem to have control in how shape the increase is
+$\beta_1$ is negative -> Decrease curve
+
+## SAheart data
+
+```{r}
+#install.packages("bestglm")
+library(bestglm)
+```
+
+```{r}
+data("SAheart")
+```
+
+Fitting Model
+```{r}
+chd_mod_ldl = glm(chd ~ ldl, data = SAheart, family = binomial)
+coef(chd_mod_ldl)
+```
+**Comment** the higher the ldl, the higher log -> higher probability somebody has heart 
+
+Plotting
+```{r}
+
+plot(jitter(chd, factor = 0.1) ~ ldl, data = SAheart, pch = 20, 
+     ylab = "Probability of CHD", xlab = "Low Density Lipoprotein Cholesterol")
+grid()
+curve(predict(chd_mod_ldl, data.frame(ldl = x), type = "response"), 
+      add = TRUE, col = "dodgerblue", lty = 2)
+```
+
+### Ward test
+
+$$
+H_0: \beta_{\text{ldl}} =0
+$$
+
+
+Test if coefficient in front of ldl is significant
+
+```{r}
+summary(chd_mod_ldl)
+```
+
+-> This relationship is significant
+
+### Likelihood Ratio Test
+Comparing different Model
+
+```{r}
+#Additive model
+chd_mod_additive = glm(chd ~ ., data = SAheart, family = binomial)
+```
+
+```{r}
+coef(chd_mod_ldl)
+coef(chd_mod_additive)
+```
+
+```{r}
+anova(chd_mod_ldl,chd_mod_additive, test = "LRT")
+```
+
+### Model Selection
+```{r}
+chd_mod_sellected = step(chd_mod_additive, trace = 0)
+coef(chd_mod_sellected)
+```
+
+```{r}
+anova(chd_mod_sellected,chd_mod_additive, test = "LRT")
+```
+
+### Confident Interval
+```{r}
+coef(chd_mod_sellected)
+```
+
+
+```{r}
+confint(chd_mod_sellected, level = 0.99)
+```
+
+### CI for mean resond
+
+```{r}
+new_obs = data.frame(
+  sbp = 148.0,
+  tobacco = 5,
+  ldl = 12,
+  adiposity = 31.23,
+  famhist = "Present",
+  typea = 47,
+  obesity = 28.50,
+  alcohol = 23.89,
+  age = 60
+)
+```
+
+```{r}
+predict(chd_mod_sellected, new_obs, type = "response")
+```
+
+```{r}
+eta_hat = predict(chd_mod_sellected, new_obs, se.fit = TRUE, type = "link")
+eta_hat
+```
+
+```{r}
+#Get critical value
+z_crit = round(qnorm(0.975), 2)
+round(z_crit, 2)
+```
+
+```{r}
+# Interval for log of
+eta_hat$fit + c(-1, 1) * z_crit * eta_hat$se.fit
+```
+
+```{r}
+#fining interval for probability
+boot::inv.logit(eta_hat$fit + c(-1, 1) * z_crit * eta_hat$se.fit)
+```
+
+### Deviance
+
+Checking error
+```{r}
+deviance(chd_mod_ldl)
+deviance(chd_mod_sellected)
+deviance(chd_mod_additive)
+
+```
+
+# Classification
+## `spam` Example
+
+```{r}
+#install.packages("kernlab")
+library(kernlab)
+data("spam")
+tibble::as.tibble(spam)
+```
+
+```{r}
+?spam
+```
+
+```{r}
+is.factor(spam$type)
+```
+
+```{r}
+levels(spam$type)
+```
+
+Spliting Test/Train Data
+```{r}
+set.seed(42)
+# spam_idx = sample(nrow(spam), round(nrow(spam) / 2))
+spam_idx = sample(nrow(spam), 1000)
+spam_trn = spam[spam_idx, ]
+spam_tst = spam[-spam_idx, ]
+```
+
+```{r}
+fit_caps = glm(type ~ capitalTotal, 
+               data = spam_trn, family = binomial)
+```
+
+```{r}
+fit_selected = glm(type ~ edu + money + capitalTotal + charDollar, 
+                   data = spam_trn, family = binomial)
+```
+
+If we look at the model we should be suspiction of model
+
+```{r}
+fit_additive = glm(type ~ ., 
+                   data = spam_trn, family = binomial)
+```
+
+```{r}
+fit_over = glm(type ~ capitalTotal * (.), 
+               data = spam_trn, family = binomial, maxit = 50)
+```
+
+
+## Evaluation Classification
+
+### Prediction
+
+Log-odd
+```{r}
+predict(fit_caps, type = "response") > 0.5
+```
+
+Use predict Probability using probability
+
+```{r}
+ifelse(predict(fit_caps, type = "response") > 0.5, "Spam", "nonspam")
+```
+
+Use predict Probability using log-odd
+```{r}
+# training misclassification rate
+mean(ifelse(predict(fit_caps) > 0, "spam", "nonspam") != spam_trn$type)
+mean(ifelse(predict(fit_selected) > 0, "spam", "nonspam") != spam_trn$type)
+mean(ifelse(predict(fit_additive) > 0, "spam", "nonspam") != spam_trn$type)
+mean(ifelse(predict(fit_over) > 0, "spam", "nonspam") != spam_trn$type)
+```
+
+Bigger model/ Fewer cases
+
+### Cross- Validation
+```{r}
+library(boot)
+set.seed(1)
+cv.glm(spam_trn, fit_caps, K = 5)$delta[1]
+## [1] 0.2166961
+cv.glm(spam_trn, fit_selected, K = 5)$delta[1]
+## [1] 0.1587043
+cv.glm(spam_trn, fit_additive, K = 5)$delta[1]
+## [1] 0.08684467
+cv.glm(spam_trn, fit_over, K = 5)$delta[1]
+```
+
+#### Making confustion Matrix
+
+```{r}
+make_conf_mat = function(predicted, actual) {
+  table(predicted = predicted, actual = actual)
+}
+```
+
+```{r}
+#spam_tst_pred = ifelse(predict(fit_additive, spam_tst) > 0, 
+                     #  "spam", 
+                      # "nonspam")
+spam_tst_pred = ifelse(predict(fit_additive, spam_tst, type = "response") > 0.5, 
+                       "spam", 
+                       "nonspam")
+```
+
+```{r}
+conf_mat_50 = make_conf_mat(predicted = spam_tst_pred, actual = spam_tst$type)
+```
+
+```{r}
+conf_mat_50
+```
+
+### Prevelance
+```{r}
+table(spam_tst$type) / nrow(spam_tst)
+```
+
+ Accuracy
+```{r}
+mean(spam_tst_pred == spam_tst$type)
+```
+
+ Misclassification
+
+```{r}
+mean(spam_tst_pred != spam_tst$type)
+```
+
+### Sensitivity
+
+```{r}
+get_sens = function(conf_mat) {
+  conf_mat[2, 2] / sum(conf_mat[, 2])
+}
+```
+
+### Specificity
+
+```{r}
+get_spec =  function(conf_mat) {
+  conf_mat[1, 1] / sum(conf_mat[, 1])
+}
+```
+
+```{r}
+get_spec(conf_mat_50)
+get_sens(conf_mat_50)
+```
+
+

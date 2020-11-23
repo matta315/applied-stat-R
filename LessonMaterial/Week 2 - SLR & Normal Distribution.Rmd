@@ -1,0 +1,458 @@
+---
+title: "School's document"
+author: "Anh Nguyen"
+date: "5/28/2020"
+output: html_document
+---
+
+#Normal Distribution
+
+IQ Score are designed so that they follow a normal distribution with a mean of 100 and Sd of 15. Ler X be a random variable for the score obtained after a randomly selected person takes an IQ test
+
+$$
+X \sim N(\mu = 100, \sigma^2 = 15^2)
+$$
+
+- pnrom - giving probability
+- dnorm - Density - height of the curve
+- qnorm - quantile
+- rnorm - Generate value given number of range, sd & mean
+- How to find z (deternmine which sd the point belongs to): (X - mean)/sd
+
+ What is the probability that a randomly selected person has an IQ below 115
+
+```{r}
+pnorm ( 115, mean = 100, sd = 15)
+```
+
+$$
+Z = \frac{X - \mu}{\sigma} \sim N(0,1)
+$$
+```{r}
+(115 - 100) /15
+
+pnorm(1)
+```
+
+> What is the height of density curse at an IQ of 115
+
+```{r}
+dnorm(115, mean = 100, sd = 15 )
+```
+
+> What is the probability that a randomly selected person has an IQ between 100 and 115
+
+```{r}
+pnorm(115, mean = 100, sd = 15) - pnorm(100, mean = 100, sd= 15)
+```
+```{r}
+pnorm(c(100,115), mean = 100, sd = 15)
+```
+
+> What is the probability that a randomly selected person has an IQ above 130
+
+```{r}
+pnorm(130, mean = 100, sd = 15, lower.tail = FALSE)
+```
+
+? what IQ is needed to be in top 5% of itelligence?
+
+$$
+P[X >c] = 0.05
+$$
+```{r}
+qnorm(0.95, mean = 100, sd = 15)
+qnorm(0.05, mean = 100, sd = 15, lower.tail = FALSE)
+
+```
+
+> What is the probability that someone hs an IQ more than 2 standard deviations from the mean?
+
+$$
+P[|X - 100| > 30]
+$$
+
+```{r}
+1 - diff(pnorm(c(70, 130), mean = 100, sd = 15))
+
+2 * pnorm(70, mean = 100 , sd = 15)
+
+2 * pnorm(2, lower.tail = FALSE)
+```
+
+> Generate a possible result of 20 randomly chosen individuals taking an IQ test
+
+```{r}
+rnorm(20, mean = 100, sd = 15)
+```
+
+## Vectorization
+
+```{r}
+pnorm(c(0.5, 1, 0), mean = c(-1,0,1), sd = c(2,1,0.5))
+```
+
+```{r}
+pnorm(0.5, mean = -1, sd = 2)
+pnorm(1, mean = 0, sd = 1)
+pnorm(0, mean = 1, sd = 0.5)
+```
+
+## Continuous Distribution
+
+```{r}
+dexp(2, rate = 0.5)
+qt (0.975, df = 10)
+pf(3.2, df1 = 3, df2 = 10)
+rchisq(10, df = 20)
+```
+
+# SLR Model (Simple Linear Regression Model)
+
+$$
+Y_i = \beta_0 + \beta_1 x_i + \epsilon_i
+$$
+
+Where
+- $x_i$: *independent, predictor, explanatory* variable
+- $Yi$: *Random, dependent, respond* variable
+- $\epsilon_i$ : (random deviation/ random error term) *independent & identical distributed* normal random variable with mean $0$ and variance $\sigma^2$. 
+- $\beta_0$ : y-intercept
+- $\beta_0$ : slope
+
+![Simple Linear Regression Model [Introductory Statistics (Shafer and Zhang), UC Davis Stat Wiki](http://statwiki.ucdavis.edu/Textbook_Maps/General_Statistics/Map%3A_Introductory_Statistics_(Shafer_and_Zhang)/10%3A_Correlation_and_Regression/10.3_Modelling_Linear_Relationships_with_Randomness_Present){target="_blank"}](images/model.jpg)
+
+**LINE**
+
+Often, we directly talk about the assumptions that this model makes. They can be cleverly shortened to **LINE**.  
+
+- **L**inear. The relationship between $Y$ and $x$ is linear, of the form $\beta_0 + \beta_1 x$.
+- **I**ndependent. The errors $\epsilon$ are independent.
+- **N**ormal. The errors, $\epsilon$ are normally distributed. That is the "error" around the line follows a normal distribution.
+- **E**qual Variance. At each value of $x$, the variance of $Y$ is the same, $\sigma^2$.
+
+**SLR**
+
+- **Simple** refers to the fact that we are using a single predictor variable. Later we will use multiple predictor variables.
+- **Linear** tells us that our model for $Y$ is a linear combination of the predictors $X$. (In this case just the one.) Right now, this always results in a model that is a line, but later we will see how this is not always the case.
+- **Regression** simply means that we are attempting to measure the relationship between a response variable and (one or more) predictor variables. In the case of SLR, both the response and the predictor are *numeric* variables. 
+
+## Least Square Approach
+
+Using **fitted** / estimate line
+
+$$
+\hat{y} = \hat{\beta}_0 + \hat{\beta}_1 x.
+$$
+
+Where $\hat{\beta}_0$  & $\hat{\beta}_1$ are *least squares estimates*/ point estimate (sample statistic) for $\beta_0$ and $\beta_1$
+
+$$
+Y_i \mid X_i \sim N(\beta_0 + \beta_1 x_i, \sigma^2)
+$$
+
+-$\\beta_0$  & $\beta_1$ : Signal of MODEL paramete
+-$\beta_0 + \beta_1 x_ir$ : mean of Y
+- \sigma^2: Noise
+
+### Beta_hat 0 and Beta_hat 1
+
+Example Data Set
+```{r}
+cars = cars 
+
+summary(cars)
+x = cars$speed
+y = cars$dist
+
+Sxy = sum((x - mean(x)) * (y - mean(y)))
+Sxx = sum((x - mean(x)) ^ 2)
+Syy = sum((y - mean(y)) ^ 2)
+
+c(Sxy, Sxx, Syy)
+
+# RSS - SSE 
+
+SST   = sum((y - mean(y)) ^ 2)
+SSReg = sum((y_hat - mean(y)) ^ 2)
+SSE   = sum((y - y_hat) ^ 2)
+c(SST = SST, SSReg = SSReg, SSE = SSE)
+```
+
+To calculate $\hat{\beta}_1$ - slope parameter
+
+```{r}
+beta_1_hat = Sxy / Sxx
+```
+
+To calculate $\hat{\beta}_0$ - intercept
+```{r}
+beta_0_hat = mean(y) - beta_1_hat * mean(x)
+```
+
+To get a scatterplot
+
+```{r}
+plot(dist ~ speed, data = cars,
+     xlab = "Speed (in Miles per hour",
+     ylab = "Stopping Distance (in Feet)",
+     main = "Stopping Distance vs Speed",
+     pch = 20,
+     cex = 2,
+     col = "grey"
+     )
+
+abline(beta_0_hat, beta_1_hat, col ="darkorange", lwd = 3)
+```
+
+to get y^
+```{r}
+y_hat = beta_0_hat + beta_1_hat * x
+```
+
+### Inter/Extrapolation
+
+> To find unique value - using $unique()$
+
+```{r}
+unique(cars$speed)
+```
+
+> Find **interpolation** or **Extrapolation**
+
+```{r}
+81 %in% unique(cars$speed)
+```
+
+```{r}
+min(cars$speed) < 21 & 21 < max(cars$speed)
+```
+
+### e - Residuals/ Error
+
+We define a **residual** to be the observed value minus the predicted value.
+
+$$
+e_i = y_i - \hat{y}_i
+$$
+> Let's calculate the residual for the prediction we made for a car traveling 8 miles per hour. First, we need to obtain the observed value of $y$ for this $x$ value. 
+
+```{r}
+which(cars$speed == 8)
+cars[5, ]
+cars[which(cars$speed == 8), ]
+```
+We can then calculate the residual.
+
+$$
+e = 16 - `r round(beta_0_hat + beta_1_hat * 8, 2)` = `r round(16 - (beta_0_hat + beta_1_hat * 8), 2)`
+$$
+
+```{r}
+16 - (beta_0_hat + beta_1_hat * 8)
+```
+
+The positive residual value indicates that the observed stopping distance is actually `r round(16 - (beta_0_hat + beta_1_hat * 8), 2)` feet more than what was predicted.
+
+### s^2e - Variance Estimation
+
+We will now define $s_e^2$ which will be an estimate for $\sigma^2$
+
+$$
+\begin{aligned}
+s_e^2 &= \frac{1}{n - 2} \sum_{i = 1}^{n}(y_i - (\hat{\beta}_0 + \hat{\beta}_1 x_i))^2 \\
+      &= \frac{1}{n - 2} \sum_{i = 1}^{n}(y_i - \hat{y}_i)^2 \\
+      &= \frac{1}{n - 2} \sum_{i = 1}^{n} e_i^2
+\end{aligned}
+$$
+
+```{r}
+y_hat = beta_0_hat + beta_1_hat * x
+e     = y - y_hat
+n     = length(e)
+s2_e  = sum(e^2) / (n - 2)
+s2_e
+```
+### SD of residuals 
+(also known as residual standard error)
+
+```{r}
+s_e = sqrt(s2_e)
+s_e
+```
+
+## Decompoosing Residual
+
+$$
+\sum_{i=1}^{n}(y_i - \bar{y})^2 = \sum_{i=1}^{n}(y_i - \hat{y}_i)^2 + \sum_{i=1}^{n}(\hat{y}_i - \bar{y})^2.
+$$
+
+$$ SST = SSE (RSS) + SSreg$$
+- $\sum_{i=1}^{n}(y_i - \bar{y})^2$ - Total (SST)
+- $\sum_{i=1}^{n}(y_i - \hat{y}_i)^2$ - Error (SSE)
+- $\sum_{i=1}^{n}(\hat{y}_i - \bar{y})^2$ - Regression (SSreg)
+
+```{r}
+SST   = sum((y - mean(y)) ^ 2)
+SSReg = sum((y_hat - mean(y)) ^ 2)
+SSE   = sum((y - y_hat) ^ 2)
+c(SST = SST, SSReg = SSReg, SSE = SSE)
+```
+
+Note that,
+
+$$
+s_e^2 = \frac{\text{SSE}}{n - 2}.
+$$
+
+```{r}
+SSE / (n - 2)
+
+s2_e == SSE/(n - 2)
+```
+
+### R^2 - Coefficient of Determination
+
+The **coefficient of determination**, $R^2$, is defined as
+
+$$
+\begin{aligned}
+R^2 &= \frac{\text{SSReg}}{\text{SST}} = \frac{\sum_{i=1}^{n}(\hat{y}_i - \bar{y})^2}{\sum_{i=1}^{n}(y_i - \bar{y})^2} \\[2.5ex]
+    &= \frac{\text{SST} - \text{SSE}}{\text{SST}} = 1 - \frac{\text{SSE}}{\text{SST}} \\[2.5ex]
+    &= 1 - \frac{\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}{\sum_{i=1}^{n}(y_i - \bar{y})^2} = 
+1 - \frac{\sum_{i = 1}^{n}e_i^2}{\sum_{i=1}^{n}(y_i - \bar{y})^2}
+\end{aligned}
+$$
+
+The coefficient of determination is interpreted as the proportion of observed variation in $y$ that can be explained by the simple linear regression model.
+
+```{r}
+R2 = SSReg / SST
+R2
+```
+
+Note
+
+$0 <= R^2 <= 1$
+
+## Maximum Likelihood
+
+## lm() Function
+```{r}
+#slr with lm()
+
+stop_dist_model = lm(dist ~ speed, data = cars)
+stop_dist_model
+
+# Output is Beta^0 and Beta^1
+```
+```{r}
+plot(dist ~ speed, data = cars,
+     xlab = "Speed (in Miles per hour",
+     ylab = " Stopping Distance in feet",
+     main = "Stopping Distance vs Speed",
+     pch = 20,
+     cex = 2,
+     col = "grey"
+     )
+
+abline(stop_dist_model, lwd =3, col = "darkorange")
+```
+
+Note: Getting the field of what is in lm()
+```{r}
+names(stop_dist_model)
+```
+
+Accessing value in the model
+```{r}
+
+stop_dist_model$coefficients
+stop_dist_model$fitted.values
+stop_dist_model$residuals
+
+#other way to getting those info
+coef(stop_dist_model)
+fitted(stop_dist_model)
+resid(stop_dist_model)
+```
+
+## Summary() function
+
+```{r}
+summary(stop_dist_model)
+names(summry(stop_dist_model))
+
+summary(stop_dist_model)$r.quare
+summary(stop_dist_model)$sigma
+```
+
+## Predict() function
+```{r}
+predict(stop_dist_model, newdata = data.frame(speed = 8))
+predict(stop_dist_model, newdata = data.frame(speed = c(8,21,50)))
+```
+
+# Simulate SLR from Thruth to Model
+
+Simple Linear Regression
+
+For this example, we will simulate $n = 21$ observations from the model
+
+$$
+Y = 5 - 2 x + \epsilon.
+$$
+##Parameter
+
+```{r}
+num_obs = 21
+beta_0 = 5
+beta_1 = -2
+sigma = 3
+```
+
+##Generate Data (since x is fix)
+
+- x data
+```{r}
+x_vals = seq(from = 0, to = 10, length.out = num_obs)
+```
+
+- epsilon
+
+```{r}
+set.seed(1)
+epsilon = rnorm(n = num_obs, mean = 0, sd = sigma)
+```
+
+- Create Y value
+```{r}
+y_vals = beta_0 + beta_1 * x_vals + epsilon
+```
+
+##Fit Model
+
+The data, $(x_i, y_i)$, represent a possible sample from the true distribution. Now to check how well the method of least squares works, we use `lm()` to fit the model to our simulated data, then take a look at the estimated coefficients.
+
+```{r}
+sim_fit = lm(y_vals ~ x_vals)
+coef(sim_fit)
+```
+
+And look at that, they aren't too far from the true parameters we specified!
+
+```{r}
+plot(y_vals ~ x_vals)
+abline(sim_fit)
+```
+
+## Simulation Function
+
+```{r}
+sim_slr = function(x, beta_0 = 10, beta_1 = 5, sigma = 1) {
+  n = length(x)
+  epsilon = rnorm(n, mean = 0, sd = sigma)
+  y = beta_0 + beta_1 * x + epsilon
+  data.frame(predictor = x, response = y)
+}
+```
